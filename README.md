@@ -24,6 +24,10 @@ Open the project in Godot 4.7 and press Play (`Main.tscn`).
 - `Main.tscn` — main scene
 - `assets/` — sprites
 
+## Credits
+
+- World tiles: Ansimuz — GothicVania "Modular Tileset" (free for commercial use).
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Third-party art retains its own license (see `assets/`).
