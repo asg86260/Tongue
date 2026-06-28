@@ -198,6 +198,9 @@ func _build_sfx() -> void:
 	sfx_win = _tone_player(_wav(s3), -2.0)
 	sfx_eat = _tone_player(_wav(s4), -4.0)
 
+func _height() -> int:
+	return int((start_y - player.global_position.y) / 100.0)
+
 # ---- callbacks the Player uses ----
 func add_pop(pos: Vector2, life: float, col: Color) -> void:
 	pops.append({"pos": pos, "t": 0.0, "life": life, "col": col})
@@ -243,6 +246,7 @@ func gulp(is_goal: bool, mouth_pos: Vector2) -> void:
 		add_shake(16.0)
 		add_pop(mouth_pos, 0.6, Color(1.0, 1.0, 0.7))
 		play_sfx("win")
+		Save.record_run(_height(), win_time, true, fly_count)
 	else:
 		fly_count += 1
 		play_sfx("eat")
@@ -250,6 +254,7 @@ func gulp(is_goal: bool, mouth_pos: Vector2) -> void:
 func _physics_process(delta: float) -> void:
 	flap += delta
 	if Input.is_action_pressed("reset"):
+		Save.record_run(_height(), 0.0, false, fly_count)   # bank progress before wiping
 		get_tree().reload_current_scene()
 		return
 
@@ -468,4 +473,4 @@ func _process(d: float) -> void:
 			label.text = "GOD CAM (F to exit)   zoom %.2f\nWASD/arrows pan  |  Q/E or wheel zoom out/in  |  F return to frog" % free_zoom
 			return
 		var clock := "ready — leave the ground to start" if not run_started else "%.2fs" % run_time
-		label.text = "TONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam\nHeight: %d   Best: %d   Tongue the fly at the top!" % [Engine.get_frames_per_second(), clock, fly_count, fly_total, int((start_y - player.global_position.y) / 100.0), int(best)]
+		label.text = "TONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam\nHeight: %d   Best: %d   Tongue the fly at the top!" % [Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
