@@ -28,28 +28,34 @@ static func tower() -> Dictionary:
 		"ground": [0, 80, 1000, 60],
 		"goal": Vector2(40, -5120),
 		"perches": [
-			[   0, -820, 220, 40],    # 1: ~8m breather
+			[   0, -1050, 240, 40],   # 1: ~10m breather
 			[ -20, -2000, 200, 40],   # 2: ~20m — end of the easy jump section
 			[  40, -3060, 190, 40],   # 3: ~30m — after the first swings
 			[  40, -4480, 180, 40],   # 4: ~44m — after the traverse
 			[  40, -5020, 150, 36],   # 5: ~50m — summit landing under the fly
 		],
 		"platforms": [
-			# --- 0–20m: jump-sized rises (≤135px), wide ledges slowly tapering ---
-			[  90, -170, 250, 36],
-			[ -90, -300, 250, 36],
-			[  95, -430, 240, 36],
-			[ -95, -560, 240, 34],
-			[ 100, -690, 230, 34],
-			# (perch 1 at -820)
-			[-100, -950, 220, 32],
-			[ 110, -1080, 210, 32],
-			[-110, -1210, 210, 32],
-			[ 115, -1340, 200, 32],
-			[-115, -1470, 200, 30],
-			[ 120, -1600, 190, 30],
-			[-120, -1730, 190, 30],
-			[ 110, -1860, 190, 30],
+			# --- 0–20m: a JUMP-ONLY staircase. Rises ~110px (under the ~142px jump apex),
+			#     tiny ±60 offsets, wide overlapping ledges — clearable by jumping alone.
+			#     Swinging is optional here; you never need the tongue until ~20m. ---
+			[  60, -60, 250, 36],
+			[ -60, -170, 250, 36],
+			[  60, -280, 250, 36],
+			[ -60, -390, 250, 34],
+			[  60, -500, 250, 34],
+			[ -60, -610, 240, 34],
+			[  60, -720, 240, 34],
+			[ -60, -830, 240, 32],
+			[  60, -940, 240, 32],
+			# (perch 1 at -1050)
+			[ -60, -1160, 240, 32],
+			[  60, -1270, 230, 32],
+			[ -60, -1380, 230, 32],
+			[  60, -1490, 230, 30],
+			[ -60, -1600, 220, 30],
+			[  60, -1710, 220, 30],
+			[ -60, -1820, 220, 30],
+			[  60, -1930, 220, 30],
 			# (perch 2 at -2000)
 			# --- 20–30m: bigger gaps (grapple) + first knob swings ---
 			[-160, -2190, 170, 30],

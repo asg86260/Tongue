@@ -15,8 +15,15 @@ var volume := 1.0          # master volume, 0..1 linear
 var fullscreen := false
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS   # F11 must work even while paused
 	load_data()
-	apply_settings()
+	# defer so the main window exists before we set its mode on boot
+	apply_settings.call_deferred()
+
+func _input(event: InputEvent) -> void:
+	# global F11 fullscreen toggle (works anywhere, independent of the menus)
+	if event.is_action_pressed("fullscreen"):
+		set_fullscreen(not fullscreen)
 
 func load_data() -> void:
 	var cfg := ConfigFile.new()
@@ -40,9 +47,8 @@ func save_data() -> void:
 func apply_settings() -> void:
 	var db := linear_to_db(volume) if volume > 0.0005 else -80.0
 	AudioServer.set_bus_volume_db(0, db)
-	var w := get_window()
-	if w:
-		w.mode = Window.MODE_FULLSCREEN if fullscreen else Window.MODE_WINDOWED
+	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
+	DisplayServer.window_set_mode(mode)
 
 func set_volume(v: float) -> void:
 	volume = clamp(v, 0.0, 1.0)
