@@ -9,6 +9,7 @@ const PlayerScene := preload("res://Player.gd")  # also used as the type of `pla
 const PauseMenuScene := preload("res://PauseMenu.gd")
 const WinScreenScene := preload("res://WinScreen.gd")
 const BackdropScene := preload("res://Backdrop.gd")
+const AtmosphereScene := preload("res://Atmosphere.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
 const GOAL_CATCH_R := 36.0    # tongue must touch this close to the goal fly to win
@@ -63,6 +64,12 @@ func _ready() -> void:
 	var backdrop := BackdropScene.new()
 	backdrop.target = player
 	bg_layer.add_child(backdrop)
+	var fg_layer := CanvasLayer.new()
+	fg_layer.layer = 1               # in front of the world, below the HUD (layer 2)
+	add_child(fg_layer)
+	var atmosphere := AtmosphereScene.new()
+	atmosphere.target = player
+	fg_layer.add_child(atmosphere)
 	_build_camera()
 	_build_ui()
 	_build_sfx()
@@ -178,6 +185,7 @@ func _build_camera() -> void:
 
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
+	layer.layer = 2                  # above the foreground atmosphere
 	add_child(layer)
 	label = Label.new()
 	label.position = Vector2(16, 12)
@@ -437,12 +445,15 @@ func _draw() -> void:
 		var c: Color = p.col
 		c.a = (1.0 - k) * 0.8
 		_pixel_ring(p.pos, r, c)
-	# grapple-only knobs: amber rings with a soft pulse (read as "aim here, don't land")
+	# grapple-only knobs: glowing amber runes (aim here, don't land) — flicker + halo
 	var pulse: float = 13.0 + sin(flap * 4.0) * 2.0
 	for kn in anchor_knobs:
-		_pixel_ring(kn, pulse, Color(0.95, 0.65, 0.25, 0.85), 12)
-		_pixel_dot(kn, 2, Color(1.0, 0.82, 0.4))
-		_pixel_dot(kn, 1, Color(1.0, 0.95, 0.7))
+		var fl: float = 0.65 + 0.35 * sin(flap * 6.0 + kn.x * 0.07)   # torch flicker
+		_pixel_dot(kn, 9, Color(0.95, 0.6, 0.2, 0.07 * fl))           # outer glow
+		_pixel_dot(kn, 6, Color(0.97, 0.68, 0.28, 0.10 * fl))         # inner glow
+		_pixel_ring(kn, pulse, Color(0.98, 0.72, 0.32, 0.9), 12)
+		_pixel_dot(kn, 2, Color(1.0, 0.84, 0.45))
+		_pixel_dot(kn, 1, Color(1.0, 0.97, 0.8))
 	# collectible flies: small bobbing bugs (uncaught only), out-of-phase per fly
 	for f in flies:
 		if f["caught"]:
@@ -452,6 +463,7 @@ func _draw() -> void:
 		var cb := roundf(sin(flap * 3.5 + ph) * 4.0)
 		var cpos := fp + Vector2(0, cb)
 		var cw: int = 1 if sin(flap * 30.0 + ph) > 0.0 else 2
+		_pixel_dot(cpos, 4, Color(0.8, 0.95, 0.6, 0.09))          # soft glow
 		_pixel_ring(cpos, 16.0, Color(0.8, 0.95, 0.6, 0.20), 10)   # faint catch halo
 		_pixel_dot(cpos + Vector2(-6, 0), cw, Color(0.8, 0.9, 1.0, 0.8))
 		_pixel_dot(cpos + Vector2(6, 0), cw, Color(0.8, 0.9, 1.0, 0.8))
@@ -468,6 +480,7 @@ func _draw() -> void:
 		var bob := roundf(sin(flap * 3.0) * 6.0)
 		var fpos := goal_pos + Vector2(0, bob)
 		var wing: int = 1 if sin(flap * 30.0) > 0.0 else 2   # 2-frame wing flap
+		_pixel_dot(fpos, 7, Color(0.7, 0.95, 0.5, 0.10))             # soft glow
 		_pixel_ring(fpos, goal_r, Color(0.55, 0.85, 0.4, 0.18), 28)   # catch halo (dotted)
 		_pixel_dot(fpos + Vector2(-9, 0), wing, Color(0.8, 0.9, 1.0, 0.8))
 		_pixel_dot(fpos + Vector2(9, 0), wing, Color(0.8, 0.9, 1.0, 0.8))
