@@ -23,13 +23,16 @@ static func tower() -> Dictionary:
 		"spawn": Vector2(0, -40),
 		"ground": [0, 80, 900, 60],
 		"goal": Vector2(40, -5120),
+		# "perches" are NOT safe rests anymore — they're narrow skill-check landings
+		# (Jump-King style). Miss one and you plummet. They stay load-bearing (you must
+		# land to recharge the tongue) but are tight, and drawn like normal ledges.
 		"perches": [
-			[ -10, -640, 300, 40],    # rest 1 (after warmup)
-			[  10, -1650, 300, 40],   # rest 2 (after anchor knobs)
-			[ -20, -2270, 300, 40],   # rest 3 (after the chasm pendulum)
-			[   0, -3250, 300, 40],   # rest 4 (after the overhangs)
-			[ 760, -3700, 300, 40],   # rest 5 (end of the lateral traverse, far right)
-			[  40, -5000, 240, 36],   # goal perch under the fly
+			[ -10, -640, 120, 40],    # landing 1 (after warmup)
+			[  10, -1650, 120, 40],   # landing 2 (after anchor knobs)
+			[ -20, -2270, 120, 40],   # landing 3 (after the chasm pendulum)
+			[   0, -3250, 120, 40],   # landing 4 (after the overhangs)
+			[ 760, -3700, 120, 40],   # landing 5 (end of the lateral traverse, far right)
+			[  40, -5000, 150, 36],   # summit landing under the fly
 		],
 		"platforms": [
 			# --- S1 Warmup: plain ledge swings (teach the rhythm) ---

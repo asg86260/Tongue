@@ -7,12 +7,14 @@ extends Node2D
 const LevelData := preload("res://LevelData.gd")
 const PlayerScene := preload("res://Player.gd")  # also used as the type of `player`
 const PauseMenuScene := preload("res://PauseMenu.gd")
+const WinScreenScene := preload("res://WinScreen.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
 const GOAL_CATCH_R := 36.0    # tongue must touch this close to the goal fly to win
 const FLY_CATCH_R := 26.0     # tongue snag radius for collectible flies
 
 var player: PlayerScene
+var win_screen: CanvasLayer
 var cam: Camera2D
 var label: Label
 var start_y := 0.0
@@ -57,6 +59,8 @@ func _ready() -> void:
 	_build_ui()
 	_build_sfx()
 	add_child(PauseMenuScene.new())
+	win_screen = WinScreenScene.new()
+	add_child(win_screen)
 	start_best = Save.best_height
 
 func _make_static(pos: Vector2, size: Vector2, col := Color(0.30, 0.27, 0.33)) -> void:
@@ -101,9 +105,9 @@ func _build_level() -> void:
 	# overhead slabs you grapple the underside of (stone grey-blue)
 	for c in lv.get("ceilings", []):
 		_make_static(Vector2(c[0], c[1]), Vector2(c[2], c[3]), Color(0.34, 0.34, 0.40))
-	# catch perches: wide safe rests, mossy-green so "safe" reads at a glance
+	# landings: narrow skill-check ledges (no safe-rest affordance — drawn like platforms)
 	for p in lv.get("perches", []):
-		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]), Color(0.26, 0.40, 0.28))
+		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]))
 	# grapple-only knobs
 	for a in lv.get("anchors", []):
 		_make_anchor(Vector2(a[0], a[1]), a[2])
@@ -255,7 +259,10 @@ func gulp(is_goal: bool, mouth_pos: Vector2) -> void:
 		add_shake(16.0)
 		add_pop(mouth_pos, 0.6, Color(1.0, 1.0, 0.7))
 		play_sfx("win")
-		Save.record_run(_height(), win_time, true, fly_count)
+		var h := _height()
+		var new_best := h > Save.best_height or Save.best_time == 0.0 or win_time < Save.best_time
+		Save.record_run(h, win_time, true, fly_count)
+		win_screen.show_win(win_time, fly_count, fly_total, h, new_best)
 	else:
 		fly_count += 1
 		play_sfx("eat")
