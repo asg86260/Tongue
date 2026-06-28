@@ -15,71 +15,81 @@ extends RefCounted
 #   to swing from AND a spot to land on (landing recharges your one tongue).
 
 static func tower() -> Dictionary:
-	# Sectioned rage design with a VARIED VOCABULARY (not just ledge-to-ledge zigzag).
-	# No checkpoints — a fall drops you to the green perch below, costing a section.
-	# Because of the one-tongue-per-airtime rule, every grapple must end in a landing,
-	# so variety comes from WHAT you grab and the shape of each leap->swing->land.
+	# DIFFICULTY CURVE (100px = 1m; jump apex ≈ 1.4m, tongue reach = MAX_LEN 400):
+	#   0–20m  : every rise ≤ ~135px so a NORMAL JUMP clears it. Wide ledges, gentle
+	#            zigzag that slowly widens + narrows — no grapple-only anchors yet.
+	#   20–30m : gaps grow past jump range (forcing grapples) + the first knob swings.
+	#   30–43m : full swings — an overhang to grapple under, a lateral traverse, narrower.
+	#   43–51m : climax — sparse knobs, narrowest ledges, the summit fly.
+	# "perches" are the band-boundary landings (also the dev warp targets, keys 1–5).
+	# Every grapple distance below is < MAX_LEN, and stays so on purpose.
 	return {
 		"spawn": Vector2(0, -40),
-		"ground": [0, 80, 900, 60],
+		"ground": [0, 80, 1000, 60],
 		"goal": Vector2(40, -5120),
-		# "perches" are NOT safe rests anymore — they're narrow skill-check landings
-		# (Jump-King style). Miss one and you plummet. They stay load-bearing (you must
-		# land to recharge the tongue) but are tight, and drawn like normal ledges.
 		"perches": [
-			[ -10, -640, 120, 40],    # landing 1 (after warmup)
-			[  10, -1650, 120, 40],   # landing 2 (after anchor knobs)
-			[ -20, -2270, 120, 40],   # landing 3 (after the chasm pendulum)
-			[   0, -3250, 120, 40],   # landing 4 (after the overhangs)
-			[ 760, -3700, 120, 40],   # landing 5 (end of the lateral traverse, far right)
-			[  40, -5000, 150, 36],   # summit landing under the fly
+			[   0, -820, 220, 40],    # 1: ~8m breather
+			[ -20, -2000, 200, 40],   # 2: ~20m — end of the easy jump section
+			[  40, -3060, 190, 40],   # 3: ~30m — after the first swings
+			[  40, -4480, 180, 40],   # 4: ~44m — after the traverse
+			[  40, -5020, 150, 36],   # 5: ~50m — summit landing under the fly
 		],
 		"platforms": [
-			# --- S1 Warmup: plain ledge swings (teach the rhythm) ---
-			[ 190, -190, 200, 32],
-			[-190, -410, 200, 32],
-			# --- S2 Anchor knobs: commit to empty-space points, fling to small ledges ---
-			[-170, -1020, 170, 28],
-			[ 190, -1420, 170, 28],
-			# --- S3 Chasm pendulum: see anchors below; land far & low ---
-			[-250, -2040, 200, 30],   # far landing, only via a real arc
-			# --- S4 Overhang dive: grapple a ceiling, swing under to a tucked ledge ---
-			[ 250, -2640, 150, 26],   # tucked under/right of the first ceiling
-			[-250, -3020, 150, 26],   # tucked under/left of the second ceiling
-			# --- S5 Lateral traverse: march RIGHT, not up (breaks the vertical grind) ---
-			[ 230, -3360, 150, 26],
-			[ 430, -3430, 150, 26],
-			[ 760, -3480, 160, 28],
-			# --- S6 Climax: sparse anchors + long reaches back up & left to the fly ---
-			[ 420, -4140, 130, 24],
-			[  60, -4560, 130, 24],
+			# --- 0–20m: jump-sized rises (≤135px), wide ledges slowly tapering ---
+			[  90, -170, 250, 36],
+			[ -90, -300, 250, 36],
+			[  95, -430, 240, 36],
+			[ -95, -560, 240, 34],
+			[ 100, -690, 230, 34],
+			# (perch 1 at -820)
+			[-100, -950, 220, 32],
+			[ 110, -1080, 210, 32],
+			[-110, -1210, 210, 32],
+			[ 115, -1340, 200, 32],
+			[-115, -1470, 200, 30],
+			[ 120, -1600, 190, 30],
+			[-120, -1730, 190, 30],
+			[ 110, -1860, 190, 30],
+			# (perch 2 at -2000)
+			# --- 20–30m: bigger gaps (grapple) + first knob swings ---
+			[-160, -2190, 170, 30],
+			[ 180, -2460, 160, 28],
+			[-150, -2640, 150, 28],
+			[ 190, -2920, 150, 28],
+			# (perch 3 at -3060)
+			# --- 30–43m: overhang + lateral traverse, narrower ---
+			[ 260, -3320, 140, 26],   # land off the overhang swing
+			[-110, -3640, 130, 26],
+			[ 130, -3800, 130, 26],
+			[ 380, -3920, 140, 26],   # traverse right...
+			[ 620, -4030, 140, 28],
+			[ 250, -4320, 130, 24],
+			# (perch 4 at -4480)
+			# --- 43–51m: climax, narrowest ledges to the summit ---
+			[ 140, -4790, 120, 24],
 		],
 		"anchors": [
-			# S2 knobs
-			[ 160, -840, 16],
-			[ -40, -1230, 16],
-			# S3 the "money" central anchor (bigger) for the chasm pendulum
-			[  30, -1880, 18],
-			# S5 a knob to fling further right across the traverse
-			[ 600, -3300, 16],
-			# S6 climax knobs
-			[ 600, -3940, 16],
-			[ 240, -4360, 16],
-			[-120, -4780, 18],
+			# 20–30m knobs
+			[  50, -2320, 16],
+			[  10, -2780, 16],
+			# 30–43m knobs
+			[  90, -3500, 18],
+			[ 470, -4200, 16],
+			# climax knobs
+			[-120, -4650, 18],
+			[  10, -4930, 16],
 		],
 		"ceilings": [
-			[ 150, -2480, 260, 28],   # S4 first overhead slab
-			[-150, -2860, 260, 28],   # S4 second overhead slab
+			[ 150, -3180, 260, 28],   # the overhang you grapple the underside of (~31m)
 		],
-		# collectible flies — snag with the tongue. Placed on risky/optional lines so
-		# going for them costs you safety. (caught count shown in UI; not required to win)
+		# collectible flies — optional, on risky/offline spots
 		"flies": [
-			[ 110, -110],    # START: a freebie right in front of spawn — teaches the catch
-			[  40, -930],    # S2: between the two knob ledges
-			[-180, -1330],   # S2: out past the second knob
-			[-110, -1980],   # S3: dangling in the chasm void — grab mid-pendulum
-			[ 150, -2560],   # S4: tucked under the first overhang
-			[ 530, -3380],   # S5: hanging over the traverse gap
-			[ 360, -4300],   # S6: off the climax line, a detour
+			[ 110, -140],    # START: a freebie to teach the catch
+			[   0, -880],    # near the first breather
+			[-130, -1280],   # mid easy section
+			[  90, -2380],   # 20m+ near the first knob
+			[ 300, -3320],   # overhang area
+			[ 620, -4000],   # far end of the traverse
+			[ 140, -4750],   # climax detour
 		],
 	}
