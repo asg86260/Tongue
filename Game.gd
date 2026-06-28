@@ -51,6 +51,7 @@ var free_was := false
 var free_zoom := 1.0
 # ---- level decoration ----
 var anchor_knobs: Array = []   # Vector2 positions of grapple-only knobs (drawn as amber rings)
+var warp_points: Array[Vector2] = []   # dev tool: number keys teleport to each landing
 
 func _ready() -> void:
 	_build_level()
@@ -108,6 +109,7 @@ func _build_level() -> void:
 	# landings: narrow skill-check ledges (no safe-rest affordance — drawn like platforms)
 	for p in lv.get("perches", []):
 		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]))
+		warp_points.append(Vector2(p[0], p[1] - p[3] * 0.5 - 30))   # just above the ledge
 	# grapple-only knobs
 	for a in lv.get("anchors", []):
 		_make_anchor(Vector2(a[0], a[1]), a[2])
@@ -312,6 +314,16 @@ func _check_milestones(hm: int) -> void:
 		add_shake(8.0)
 		play_sfx("win")
 
+func _warp_to(i: int) -> void:
+	player.global_position = warp_points[i]
+	player.linear_velocity = Vector2.ZERO
+	player.tstate = 0
+	player.tlen = 0.0
+	player.attached = false
+	player.carrying = false
+	player.carrying_goal = false
+	player.has_tongue = true
+
 func _toggle_freecam() -> void:
 	free_mode = not free_mode
 	player.freeze = free_mode      # park the frog while inspecting
@@ -336,6 +348,13 @@ func _freecam_update(delta: float) -> void:
 	freecam.zoom = Vector2(free_zoom, free_zoom)
 
 func _unhandled_input(event: InputEvent) -> void:
+	# dev tool: number keys 1..N warp the frog to each landing to drill a single section
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k := event as InputEventKey
+		var idx: int = k.physical_keycode - KEY_1
+		if k.physical_keycode >= KEY_1 and k.physical_keycode <= KEY_9 and idx < warp_points.size():
+			_warp_to(idx)
+			return
 	if not free_mode:
 		return
 	if event is InputEventMouseButton and event.pressed:
@@ -522,4 +541,4 @@ func _process(d: float) -> void:
 			return
 		var clock := "ready — leave the ground to start" if not run_started else "%.2fs" % run_time
 		var banner := "★ NEW BEST ★\n" if best_flash > 0.0 else ""
-		label.text = "%sTONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam\nHeight: %d   Best: %d   Tongue the fly at the top!" % [banner, Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
+		label.text = "%sTONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam  |  1-6 warp\nHeight: %d   Best: %d   Tongue the fly at the top!" % [banner, Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]

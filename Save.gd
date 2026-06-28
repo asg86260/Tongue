@@ -40,8 +40,9 @@ func save_data() -> void:
 func apply_settings() -> void:
 	var db := linear_to_db(volume) if volume > 0.0005 else -80.0
 	AudioServer.set_bus_volume_db(0, db)
-	DisplayServer.window_set_mode(
-		DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
+	var w := get_window()
+	if w:
+		w.mode = Window.MODE_FULLSCREEN if fullscreen else Window.MODE_WINDOWED
 
 func set_volume(v: float) -> void:
 	volume = clamp(v, 0.0, 1.0)

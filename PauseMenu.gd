@@ -4,6 +4,7 @@ extends CanvasLayer
 # (process_mode ALWAYS). Instanced by Game. Offers Resume / Restart / Settings /
 # Quit to Title. Shares the Settings overlay with the Title screen.
 
+const Ui := preload("res://Ui.gd")
 const SettingsScene := preload("res://Settings.gd")
 const TITLE_PATH := "res://Title.tscn"
 
@@ -21,7 +22,7 @@ func _ready() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.06, 0.08, 0.7)
+	dim.color = Ui.SCRIM
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
 
@@ -29,26 +30,23 @@ func _ready() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(center)
 
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", Ui.card_box())
+	center.add_child(card)
+
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 16)
+	box.add_theme_constant_override("separation", 14)
 	box.custom_minimum_size = Vector2(300, 0)
-	center.add_child(box)
+	card.add_child(box)
 
-	var title := Label.new()
-	title.text = "PAUSED"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 44)
-	box.add_child(title)
+	box.add_child(Ui.heading("PAUSED", Ui.MOSS, 42))
 
-	_add_button(box, "Resume", _resume)
-	_add_button(box, "Restart", _restart)
-	_add_button(box, "Settings", _open_settings)
-	_add_button(box, "Quit to Title", _quit_to_title)
+	_add(box, Ui.button("Resume"), _resume)
+	_add(box, Ui.button("Restart"), _restart)
+	_add(box, Ui.button("Settings"), _open_settings)
+	_add(box, Ui.button("Quit to Title", Ui.TONGUE), _quit_to_title)
 
-func _add_button(box: VBoxContainer, text: String, cb: Callable) -> void:
-	var b := Button.new()
-	b.text = text
-	b.add_theme_font_size_override("font_size", 26)
+func _add(box: VBoxContainer, b: Button, cb: Callable) -> void:
 	b.pressed.connect(cb)
 	box.add_child(b)
 

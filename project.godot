@@ -22,6 +22,8 @@ Save="*res://Save.gd"
 
 window/size/viewport_width=1100
 window/size/viewport_height=760
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/vsync/vsync_mode=0
 
 [physics]
