@@ -46,9 +46,9 @@ func _draw() -> void:
 				Vector2(sx + w - skew, vp.y), Vector2(sx - skew, vp.y)]),
 			PackedColorArray([top, top, bot, bot]))
 
-	# parallax ruin layers (gateways receding up the tower)
-	_ruin_layer(vp, cam, 0.10, 540.0, 0.70, RUIN_FAR)
-	_ruin_layer(vp, cam, 0.26, 400.0, 1.0, RUIN_MID)
+	# parallax ruin layers (gateways receding up the tower) — gentle drift
+	_ruin_layer(vp, cam, 0.05, 540.0, 0.70, RUIN_FAR)
+	_ruin_layer(vp, cam, 0.13, 400.0, 1.0, RUIN_MID)
 
 	# soft mist band low on screen
 	draw_polygon(
@@ -56,21 +56,25 @@ func _draw() -> void:
 			Vector2(vp.x, vp.y), Vector2(0, vp.y)]),
 		PackedColorArray([Color(MIST.r, MIST.g, MIST.b, 0.0), Color(MIST.r, MIST.g, MIST.b, 0.0), MIST, MIST]))
 
-# a vertically-tiled layer of broken stone gateways, parallax-scrolled by the camera
+# a vertically-tiled layer of broken stone gateways, parallax-scrolled by the camera.
+# Each gateway's shape is seeded by its ABSOLUTE world tile index, so shapes stay fixed
+# and only slide as you climb (no morphing when the scroll wraps).
 func _ruin_layer(vp: Vector2, cam: Vector2, f: float, period: float, scale: float, col: Color) -> void:
-	var scroll := fmodp(cam.y * f, period)
+	var scroll := cam.y * f
 	var ox := -cam.x * f * 0.5
-	var rows := int(vp.y / period) + 2
+	var base := int(floor(scroll / period))
+	var rows := int(vp.y / period) + 3
 	for k in range(-1, rows):
-		var y := k * period + scroll + 60.0
-		# two gateways per row, staggered, with index-based variation
-		_gateway(vp.x * 0.30 + ox, y, scale, col, k)
-		_gateway(vp.x * 0.74 + ox, y + period * 0.45, scale * 0.85, col, k + 3)
+		var tile := base + k                       # absolute, world-anchored
+		var y := tile * period - scroll + 60.0     # smooth projection to screen
+		# two gateways per row, staggered, each with a stable per-tile shape
+		_gateway(vp.x * 0.30 + ox, y, scale, col, tile)
+		_gateway(vp.x * 0.74 + ox, y + period * 0.45, scale * 0.85, col, tile * 7 + 3)
 
 # a ruined stone gateway silhouette: two pillars + a broken lintel
 func _gateway(cx: float, y: float, s: float, col: Color, seed: int) -> void:
 	var pw := 30.0 * s
-	var ph := (150.0 + (seed % 3) * 26.0) * s
+	var ph := (150.0 + posmod(seed, 3) * 26.0) * s
 	var gap := 110.0 * s
 	draw_rect(Rect2(cx - gap * 0.5 - pw, y, pw, ph), col)
 	draw_rect(Rect2(cx + gap * 0.5, y, pw, ph * 0.86), col)   # one pillar broken shorter

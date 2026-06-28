@@ -71,7 +71,21 @@ func _ready() -> void:
 	add_child(win_screen)
 	start_best = Save.best_height
 
-func _make_static(pos: Vector2, size: Vector2, col := Color(0.30, 0.27, 0.33)) -> void:
+const STONE := Color("3a3d31")        # warm grey-green stone
+const STONE_LO := Color("2c2f25")      # stone in shadow (lower band)
+const MOSS_CAP := Color("4f7d3c")      # moss along the top
+const MOSS_HI := Color("6fa353")       # moss highlight
+const VINE := Color("3a5a30")          # hanging vines
+
+func _add_rect(parent: Node2D, cx: float, cy: float, w: float, h: float, col: Color) -> void:
+	var p := Polygon2D.new()
+	p.polygon = PackedVector2Array([
+		Vector2(cx - w * 0.5, cy - h * 0.5), Vector2(cx + w * 0.5, cy - h * 0.5),
+		Vector2(cx + w * 0.5, cy + h * 0.5), Vector2(cx - w * 0.5, cy + h * 0.5)])
+	p.color = col
+	parent.add_child(p)
+
+func _make_static(pos: Vector2, size: Vector2, stone := STONE, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
 	sb.collision_layer = 1
@@ -80,13 +94,29 @@ func _make_static(pos: Vector2, size: Vector2, col := Color(0.30, 0.27, 0.33)) -
 	shape.size = size
 	cs.shape = shape
 	sb.add_child(cs)
-	var poly := Polygon2D.new()
 	var hx := size.x * 0.5
 	var hy := size.y * 0.5
-	poly.polygon = PackedVector2Array([
-		Vector2(-hx, -hy), Vector2(hx, -hy), Vector2(hx, hy), Vector2(-hx, hy)])
-	poly.color = col
-	sb.add_child(poly)
+	# stone body + a darker shadow band along the bottom third
+	_add_rect(sb, 0, 0, size.x, size.y, stone)
+	_add_rect(sb, 0, hy - size.y * 0.16, size.x, size.y * 0.32, STONE_LO)
+	# hanging vines from the underside (deterministic per ledge)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
+	var vines := 1 + rng.randi() % 3
+	for i in vines:
+		var vx := rng.randf_range(-hx + 8.0, hx - 8.0)
+		var vl := rng.randf_range(14.0, 42.0)
+		var vw := rng.randf_range(3.0, 6.0)
+		_add_rect(sb, vx, hy + vl * 0.5, vw, vl, VINE)
+	if mossy:
+		# moss cap along the top, with a brighter highlight line and a few drips
+		_add_rect(sb, 0, -hy + 4.0, size.x, 8.0, MOSS_CAP)
+		_add_rect(sb, 0, -hy + 1.0, size.x, 2.0, MOSS_HI)
+		var drips := 2 + rng.randi() % 3
+		for i in drips:
+			var dx := rng.randf_range(-hx + 6.0, hx - 6.0)
+			var dl := rng.randf_range(5.0, 16.0)
+			_add_rect(sb, dx, -hy + 8.0 + dl * 0.5, rng.randf_range(4.0, 9.0), dl, MOSS_CAP)
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:
@@ -107,12 +137,12 @@ func _build_level() -> void:
 	var lv := LevelData.tower()
 	level_spawn = lv["spawn"]
 	var g = lv["ground"]
-	_make_static(Vector2(g[0], g[1]), Vector2(g[2], g[3]), Color(0.22, 0.30, 0.24))
+	_make_static(Vector2(g[0], g[1]), Vector2(g[2], g[3]), Color("403a2e"))
 	for p in lv["platforms"]:
 		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]))
-	# overhead slabs you grapple the underside of (stone grey-blue)
+	# overhead slabs you grapple the underside of (cooler stone, no top moss)
 	for c in lv.get("ceilings", []):
-		_make_static(Vector2(c[0], c[1]), Vector2(c[2], c[3]), Color(0.34, 0.34, 0.40))
+		_make_static(Vector2(c[0], c[1]), Vector2(c[2], c[3]), Color("3c3f44"), false)
 	# landings: narrow skill-check ledges (no safe-rest affordance — drawn like platforms)
 	for p in lv.get("perches", []):
 		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]))
