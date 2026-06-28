@@ -83,21 +83,24 @@ func _ready() -> void:
 # platform material, so the tiles carry the detail (no hand-scattered decoration).
 const TILES := preload("res://assets/tiles/modular-tileset.png")
 const T := 16            # source tile size
-const TW := 32.0         # tile world size (16 * 2.0 draw scale)
+const TS := 2.6          # draw scale — matches the frog's pixel size for cohesion
+const TW := T * TS       # tile world size (41.6)
 
-func _tile(parent: Node2D, x: float, y: float, col: int, row: int) -> void:
+func _tile(parent: Node2D, x: float, y: float, col: int, row: int, flip := false) -> void:
 	var s := Sprite2D.new()
 	var at := AtlasTexture.new()
 	at.atlas = TILES
 	at.region = Rect2(col * T, row * T, T, T)
 	s.texture = at
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	s.scale = Vector2(2.0, 2.0)
+	s.scale = Vector2(TS, TS)
 	s.position = Vector2(x, y)
+	s.flip_h = flip
 	parent.add_child(s)
 
 # A ledge: one leafy-green top row over stone-body rows (mossy=false skips the
 # grass for overhangs). The body hangs a row below the collision for visual mass.
+# Tile variant + flip are randomized per cell so the vines don't form a grid.
 func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
@@ -108,18 +111,21 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	cs.shape = shape
 	sb.add_child(cs)
 	var hy := size.y * 0.5
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
 	var cols: int = max(1, int(ceil(size.x / TW)))
 	var rows: int = max(2, int(ceil(size.y / TW)) + 1)
 	var startx := -(cols - 1) * TW * 0.5
 	var topy := -hy + TW * 0.5
 	for cxi in cols:
 		var x := startx + cxi * TW
-		var c: int = 5 if cxi % 2 == 0 else 6     # alternate the two tile variants
 		for r in rows:
+			var c: int = 5 if rng.randf() < 0.5 else 6   # random variant per cell
+			var fl := rng.randf() < 0.5                  # random flip breaks the grid
 			if r == 0 and mossy:
-				_tile(sb, x, topy, c, 7)           # leafy green top
+				_tile(sb, x, topy, c, 7, fl)             # leafy green top
 			else:
-				_tile(sb, x, topy + r * TW, c, 8)  # stone body (vines built in)
+				_tile(sb, x, topy + r * TW, c, 8, fl)    # stone body (vines built in)
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:
