@@ -6,6 +6,7 @@ extends Node2D
 
 const LevelData := preload("res://LevelData.gd")
 const PlayerScene := preload("res://Player.gd")  # also used as the type of `player`
+const PauseMenuScene := preload("res://PauseMenu.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
 const GOAL_CATCH_R := 36.0    # tongue must touch this close to the goal fly to win
@@ -49,6 +50,7 @@ func _ready() -> void:
 	_build_camera()
 	_build_ui()
 	_build_sfx()
+	add_child(PauseMenuScene.new())
 
 func _make_static(pos: Vector2, size: Vector2, col := Color(0.30, 0.27, 0.33)) -> void:
 	var sb := StaticBody2D.new()
