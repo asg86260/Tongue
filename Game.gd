@@ -17,6 +17,12 @@ var cam: Camera2D
 var label: Label
 var start_y := 0.0
 var best := 0.0
+# ---- height milestones ----
+const MILESTONE_M := 10        # draw a marker line every this many metres (100px = 1m)
+var start_best := 0            # the saved best height at run start (for the "new best" flourish)
+var milestone_reached := 0     # highest milestone metre we've already celebrated this run
+var beat_best := false         # fired the "new best" flourish yet?
+var best_flash := 0.0          # HUD "NEW BEST" banner timer
 # ---- run / goal state ----
 var goal_pos := Vector2.ZERO
 var goal_r := 46.0
@@ -51,6 +57,7 @@ func _ready() -> void:
 	_build_ui()
 	_build_sfx()
 	add_child(PauseMenuScene.new())
+	start_best = Save.best_height
 
 func _make_static(pos: Vector2, size: Vector2, col := Color(0.30, 0.27, 0.33)) -> void:
 	var sb := StaticBody2D.new()
@@ -281,7 +288,22 @@ func _physics_process(delta: float) -> void:
 
 	var h := (start_y - player.global_position.y) / 100.0
 	best = max(best, h)
+	_check_milestones(int(h))
 	queue_redraw()
+
+# fire a small flourish each new MILESTONE_M climbed, and a big one when beating the saved best
+func _check_milestones(hm: int) -> void:
+	while hm >= milestone_reached + MILESTONE_M:
+		milestone_reached += MILESTONE_M
+		add_pop(player.global_position, 0.45, Color(0.6, 0.95, 0.6))
+		add_shake(2.5)
+		play_sfx("hop")
+	if not beat_best and start_best > 0 and hm > start_best:
+		beat_best = true
+		best_flash = 2.0
+		add_pop(player.global_position, 0.7, Color(1.0, 0.95, 0.5))
+		add_shake(8.0)
+		play_sfx("win")
 
 func _toggle_freecam() -> void:
 	free_mode = not free_mode
@@ -316,7 +338,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			free_zoom = maxf(free_zoom * 0.88, 0.06)
 		freecam.zoom = Vector2(free_zoom, free_zoom)
 
+func _draw_milestones() -> void:
+	# faint dotted height lines up the tower, labelled in metres (100px = 1m)
+	var font := ThemeDB.fallback_font
+	var top_m := int((start_y - goal_pos.y) / 100.0) + MILESTONE_M
+	var m := MILESTONE_M
+	while m <= top_m:
+		var y := start_y - m * 100.0
+		var passed := _height() >= m
+		var line_col := Color(0.7, 0.9, 0.7, 0.14) if passed else Color(1, 1, 1, 0.07)
+		_pixel_line_dotted(Vector2(-420, y), Vector2(1, 0), 1340, line_col, 3)
+		if font:
+			draw_string(font, Vector2(-470, y + 5), "%dm" % m,
+				HORIZONTAL_ALIGNMENT_RIGHT, 44, 16, Color(0.8, 0.85, 0.9, 0.45))
+		m += MILESTONE_M
+
 func _draw() -> void:
+	_draw_milestones()
 	var bpos := player.global_position
 	var col := Color(0.95, 0.45, 0.55)
 	# speed trail: faded pixel ghost behind the body, brighter the faster you move
@@ -464,6 +502,7 @@ func _process(d: float) -> void:
 	for p in pops:
 		p.t += d
 	pops = pops.filter(func(p): return p.t < p.life)
+	best_flash = max(best_flash - d, 0.0)
 	queue_redraw()
 
 	if not label:
@@ -475,4 +514,5 @@ func _process(d: float) -> void:
 			label.text = "GOD CAM (F to exit)   zoom %.2f\nWASD/arrows pan  |  Q/E or wheel zoom out/in  |  F return to frog" % free_zoom
 			return
 		var clock := "ready — leave the ground to start" if not run_started else "%.2fs" % run_time
-		label.text = "TONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam\nHeight: %d   Best: %d   Tongue the fly at the top!" % [Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
+		var banner := "★ NEW BEST ★\n" if best_flash > 0.0 else ""
+		label.text = "%sTONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam\nHeight: %d   Best: %d   Tongue the fly at the top!" % [banner, Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
