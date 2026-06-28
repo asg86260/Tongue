@@ -8,6 +8,7 @@ const LevelData := preload("res://LevelData.gd")
 const PlayerScene := preload("res://Player.gd")  # also used as the type of `player`
 const PauseMenuScene := preload("res://PauseMenu.gd")
 const WinScreenScene := preload("res://WinScreen.gd")
+const BackdropScene := preload("res://Backdrop.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
 const GOAL_CATCH_R := 36.0    # tongue must touch this close to the goal fly to win
@@ -56,6 +57,12 @@ var warp_points: Array[Vector2] = []   # dev tool: number keys teleport to each 
 func _ready() -> void:
 	_build_level()
 	_build_player()
+	var bg_layer := CanvasLayer.new()
+	bg_layer.layer = -10
+	add_child(bg_layer)
+	var backdrop := BackdropScene.new()
+	backdrop.target = player
+	bg_layer.add_child(backdrop)
 	_build_camera()
 	_build_ui()
 	_build_sfx()
