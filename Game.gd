@@ -386,14 +386,14 @@ func _fire() -> void:
 
 func _physics_process(delta: float) -> void:
 	flap += delta
-	if Input.is_key_pressed(KEY_R):
+	if Input.is_action_pressed("reset"):
 		get_tree().reload_current_scene()
 		return
 
 	# free-cam / god mode toggle (F): freeze the frog, fly the camera around
-	if Input.is_key_pressed(KEY_F) and not free_was:
+	if Input.is_action_pressed("godcam") and not free_was:
 		_toggle_freecam()
-	free_was = Input.is_key_pressed(KEY_F)
+	free_was = Input.is_action_pressed("godcam")
 	if free_mode:
 		_freecam_update(delta)
 		queue_redraw()
@@ -416,7 +416,7 @@ func _physics_process(delta: float) -> void:
 		_pop(body.global_position, 0.25, Color(0.45, 1.0, 0.55))   # recharge flash
 
 	# fire on click edge / release to let go
-	var pressed := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	var pressed := Input.is_action_pressed("fire")
 	if pressed and not was_pressed and tstate == 0 and has_tongue:
 		_fire()
 	if not pressed:
@@ -476,9 +476,9 @@ func _physics_process(delta: float) -> void:
 
 	# horizontal input
 	var ix := 0.0
-	if Input.is_key_pressed(KEY_A):
+	if Input.is_action_pressed("move_left"):
 		ix -= 1.0
-	if Input.is_key_pressed(KEY_D):
+	if Input.is_action_pressed("move_right"):
 		ix += 1.0
 
 	# locomotion: walk/run on the ground (velocity-driven, no rolling),
@@ -491,7 +491,7 @@ func _physics_process(delta: float) -> void:
 
 	# frog-leap whenever standing on something — allowed even with the tongue attached
 	# (jump off the ground into a swing); the tongue stays stuck.
-	var jump := Input.is_key_pressed(KEY_SPACE)
+	var jump := Input.is_action_pressed("jump")
 	if jump and not jump_was and grounded:
 		body.linear_velocity.y = -JUMP_IMPULSE
 		body.linear_velocity.x += ix * JUMP_DIR   # directional hop when holding A/D
@@ -540,14 +540,14 @@ func _toggle_freecam() -> void:
 
 func _freecam_update(delta: float) -> void:
 	var v := Vector2.ZERO
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):  v.x -= 1.0
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): v.x += 1.0
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):    v.y -= 1.0
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):  v.y += 1.0
+	if Input.is_action_pressed("move_left"):  v.x -= 1.0
+	if Input.is_action_pressed("move_right"): v.x += 1.0
+	if Input.is_action_pressed("move_up"):    v.y -= 1.0
+	if Input.is_action_pressed("move_down"):  v.y += 1.0
 	# pan speed scales inversely with zoom so it feels constant on screen
 	freecam.position += v * (1100.0 * delta / free_zoom)
-	if Input.is_key_pressed(KEY_E): free_zoom = minf(free_zoom * (1.0 + delta * 1.6), 4.0)   # zoom in
-	if Input.is_key_pressed(KEY_Q): free_zoom = maxf(free_zoom * (1.0 - delta * 1.6), 0.06)  # zoom out
+	if Input.is_action_pressed("zoom_in"):  free_zoom = minf(free_zoom * (1.0 + delta * 1.6), 4.0)
+	if Input.is_action_pressed("zoom_out"): free_zoom = maxf(free_zoom * (1.0 - delta * 1.6), 0.06)
 	freecam.zoom = Vector2(free_zoom, free_zoom)
 
 func _unhandled_input(event: InputEvent) -> void:
