@@ -105,6 +105,7 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
 	sb.collision_layer = 1
+	sb.z_index = -1            # behind Game._draw so the tongue/flies render in front
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
