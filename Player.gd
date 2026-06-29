@@ -28,6 +28,12 @@ const RUN_ANIM_AT := 150.0   # |vx| above this shows the run animation
 const BODY_RADIUS := 18.0
 const FROG_DIR := "res://assets/FROGLET_16x16_Sprite/green/PNG/"
 
+# ---- per-biome swing gimmicks (escalating difficulty) ----
+const Biome := preload("res://Biome.gd")
+const SPAWN_Y := -40.0
+const CRUMBLE_TIME := 1.15   # Ruins: a grip crumbles (lets go) this long after you stick
+const WIND_FORCE := 165.0    # Cliffs: alternating horizontal gust strength on the airborne frog
+
 var controller            # the Game node (juice/catch callbacks + phase flags)
 var active := true        # false while god-cam or after winning (stops control logic)
 
@@ -44,6 +50,8 @@ var thit := false           # will this shot connect once it reaches the target?
 var aim_dir := Vector2.RIGHT
 var jump_was := false
 var has_tongue := true   # one tongue per airtime; recharges on touching ground
+var attach_t := 0.0      # how long the current grip has held (Ruins crumbling)
+var gtime := 0.0         # gameplay clock (Cliffs wind gusts)
 # ---- anim / juice ----
 var face_dir := Vector2.RIGHT   # smoothed facing for the frog sprite
 var mouth := Vector2.ZERO       # where the tongue fires from
@@ -169,6 +177,9 @@ func _physics_process(delta: float) -> void:
 	if not active:
 		return
 
+	gtime += delta
+	var biome := Biome.index((SPAWN_Y - global_position.y) / 100.0)
+
 	# tongue recharges the moment you touch ground (one tongue per airtime)
 	grounded = is_grounded()
 	if grounded and not has_tongue:
@@ -207,6 +218,7 @@ func _physics_process(delta: float) -> void:
 					grab_len = d
 					rest_len = grab_len
 					attached = true
+					attach_t = 0.0       # start the Ruins crumble clock for this grip
 					tstate = 2
 					if not grounded:
 						has_tongue = false   # a SUCCESSFUL airborne grab is your one per jump
@@ -226,6 +238,17 @@ func _physics_process(delta: float) -> void:
 				carrying_goal = false
 
 	if attached:
+		# RUINS gimmick — crumbling grips: a grip only holds for CRUMBLE_TIME, with a
+		# rumble warning near the end, then lets go. You must keep your momentum moving.
+		attach_t += delta
+		if biome == 1:
+			if attach_t > CRUMBLE_TIME * 0.62:
+				controller.add_shake(1.6)           # telegraph: it's about to give
+			if attach_t > CRUMBLE_TIME:
+				attached = false
+				tstate = 0
+				controller.add_shake(6.0)
+				controller.play_sfx("stick")
 		# the tongue gently retracts toward a fraction of the grab length (pulls in "a little")
 		rest_len = move_toward(rest_len, grab_len * PULL_FACTOR, CONTRACT_SPEED * delta)
 		# elastic pull toward the anchor (springy, with give)
@@ -260,6 +283,11 @@ func _physics_process(delta: float) -> void:
 		# momentum already past the cap is preserved (we never actively brake).
 		if attached or ix * linear_velocity.x < AIR_STRAFE_MAX:
 			apply_central_force(Vector2(ix * AIR_NUDGE, 0))
+
+	# CLIFFS gimmick — wind: slow alternating gusts shove the airborne frog, so you must
+	# lean into them to hold a line through a swing. (Telegraphed by the blowing embers.)
+	if biome == 2 and not grounded:
+		apply_central_force(Vector2(sin(gtime * 0.6) * WIND_FORCE, 0.0))
 
 	# frog-leap whenever standing on something — allowed even with the tongue attached
 	# (jump off the ground into a swing); the tongue stays stuck.
