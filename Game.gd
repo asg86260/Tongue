@@ -174,6 +174,31 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 				_tile(sb, startx + cxi * tw, -hy - TW * 0.3, p.x, p.y, sx, rng.randf() < 0.5)
 	add_child(sb)
 
+# A solid wall/terrain mass behind the ledges (z -3): seamless rock fill + collision,
+# no surface dressing. Used to frame the climb as a real canyon (ledges attach to it).
+func _make_wall(pos: Vector2, size: Vector2) -> void:
+	var sb := StaticBody2D.new()
+	sb.position = pos
+	sb.collision_layer = 1
+	sb.z_index = -3
+	var cs := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = size
+	cs.shape = shape
+	sb.add_child(cs)
+	var hx := size.x * 0.5
+	var hy := size.y * 0.5
+	var bi := Biome.index((level_spawn.y - pos.y) / 100.0)
+	var body := Polygon2D.new()
+	body.polygon = PackedVector2Array([Vector2(-hx, -hy), Vector2(hx, -hy), Vector2(hx, hy), Vector2(-hx, hy)])
+	body.texture = ROCK[bi]
+	body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	body.texture_scale = Vector2(0.4, 0.4)
+	body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	body.color = Color(0.78, 0.78, 0.78)   # slightly recessed so ledges read in front
+	sb.add_child(body)
+	add_child(sb)
+
 func _make_anchor(pos: Vector2, r: float) -> void:
 	# a small circular grapple-only knob: real collision (so the tongue sticks),
 	# too small to land on, drawn as an amber pixel ring in _draw()
@@ -191,6 +216,9 @@ func _make_anchor(pos: Vector2, r: float) -> void:
 func _build_level() -> void:
 	var lv := LevelData.tower()
 	level_spawn = lv["spawn"]
+	# solid wall/terrain masses that frame the climb (canyon) — built first, behind ledges
+	for w in lv.get("walls", []):
+		_make_wall(Vector2(w[0], w[1]), Vector2(w[2], w[3]))
 	var g = lv["ground"]
 	_make_static(Vector2(g[0], g[1]), Vector2(g[2], g[3]))
 	for p in lv["platforms"]:
