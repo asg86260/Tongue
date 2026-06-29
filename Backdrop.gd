@@ -21,10 +21,12 @@ var target: Node2D
 var _biomes: Array = []   # each: { "start": float, "sprites": Array[Sprite2D] }
 
 # layer def = [texture, motion:Vector2, scale:float, vtile:float]  (vtile 0 = no v-tiling)
+# Woods, treated like the mountain scenes: a non-repeating backdrop (no vertical
+# tiling) so its gradient/trees never seam or cut. Sky pinned, trees near the horizon.
 func _woods() -> Array: return [
-	[preload("res://assets/bg/mist-back.png"),       Vector2(0.06, 0.00), 3.4, 0.00],
-	[preload("res://assets/bg/mist-back-trees.png"), Vector2(0.13, 0.10), 3.2, 1.00],
-	[preload("res://assets/bg/mist-tree.png"),       Vector2(0.24, 0.18), 3.0, 1.45],
+	[preload("res://assets/bg/mist-back.png"),       Vector2(0.04, 0.00), 3.4, 0.0],
+	[preload("res://assets/bg/mist-back-trees.png"), Vector2(0.08, 0.05), 3.2, 0.0],
+	[preload("res://assets/bg/mist-tree.png"),       Vector2(0.14, 0.10), 3.0, 0.0],
 ]
 func _scene(p: String) -> Array: return [
 	[load("res://assets/bg/%s-sky.png" % p),   Vector2(0.04, 0.00), 3.2, 0.0],
@@ -34,23 +36,34 @@ func _scene(p: String) -> Array: return [
 
 func _ready() -> void:
 	layer = -10
-	_build(0.0, _woods())
-	_build(13.0, _scene("ruins"))
-	_build(27.0, _scene("cliffs"))
-	_build(40.0, _scene("peak"))
+	get_viewport().size_changed.connect(_rebuild)
+	_rebuild()
 
-func _build(start: float, defs: Array) -> void:
+# Rebuild all layers sized to the CURRENT viewport, so the backdrop fills any window
+# (windowed or fullscreen) with no cut-off, and no vertical tiling.
+func _rebuild() -> void:
+	for c in get_children():
+		c.queue_free()
+	_biomes.clear()
+	var vp := get_viewport().get_visible_rect().size
+	var fill := vp.y / 760.0        # scale layers up so they fill the viewport height
+	var span := maxf(vp.x * 1.5, 1800.0)
+	_build(0.0, _woods(), fill, span)
+	_build(13.0, _scene("ruins"), fill, span)
+	_build(27.0, _scene("cliffs"), fill, span)
+	_build(40.0, _scene("peak"), fill, span)
+
+func _build(start: float, defs: Array, fill: float, span: float) -> void:
 	var sprites: Array = []
 	for d in defs:
 		var tex: Texture2D = d[0]
-		var scl: float = d[2]
+		var scl: float = d[2] * fill
 		var w := tex.get_width() * scl
 		var pl := ParallaxLayer.new()
 		pl.motion_scale = d[1]
-		# place enough horizontal copies to span a wide (fullscreen) viewport — the count
-		# scales with texture width, so even a 32px gradient strip fills. Robust full
-		# coverage instead of motion_mirroring.x, which left gaps on the right edge.
-		var num: int = int(ceil(2600.0 / w))
+		# explicit horizontal copies spanning the viewport (count scales with width, so
+		# even a 32px gradient fills) — robust coverage with no vertical tiling.
+		var num: int = int(ceil(span / w)) + 1
 		for i in range(-num, num + 1):
 			var spr := Sprite2D.new()
 			spr.texture = tex
@@ -60,9 +73,6 @@ func _build(start: float, defs: Array) -> void:
 			spr.position = Vector2(i * w, 0)
 			pl.add_child(spr)
 			sprites.append(spr)
-		# vertical mirroring only where the layer is meant to tile up (the forest trees)
-		var vh: float = tex.get_height() * scl * d[3] if d[3] > 0.0 else 0.0
-		pl.motion_mirroring = Vector2(0, vh)
 		add_child(pl)
 	_biomes.append({ "start": start, "sprites": sprites })
 
