@@ -10,6 +10,7 @@ const PauseMenuScene := preload("res://PauseMenu.gd")
 const WinScreenScene := preload("res://WinScreen.gd")
 const BackdropScene := preload("res://Backdrop.gd")
 const AtmosphereScene := preload("res://Atmosphere.gd")
+const Biome := preload("res://Biome.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
 const GOAL_CATCH_R := 36.0    # tongue must touch this close to the goal fly to win
@@ -58,7 +59,9 @@ var warp_points: Array[Vector2] = []   # dev tool: number keys teleport to each 
 func _ready() -> void:
 	_build_level()
 	_build_player()
-	add_child(BackdropScene.new())   # ParallaxBackground; follows the camera, sits at layer -10
+	var backdrop := BackdropScene.new()   # ParallaxBackground; follows the camera, layer -10
+	backdrop.target = player
+	add_child(backdrop)
 	var fg_layer := CanvasLayer.new()
 	fg_layer.layer = 1               # in front of the world, below the HUD (layer 2)
 	add_child(fg_layer)
@@ -72,11 +75,20 @@ func _ready() -> void:
 	win_screen = WinScreenScene.new()
 	add_child(win_screen)
 	start_best = Save.best_height
-	# dev: launch with `-- --shot` to save a viewport screenshot to user://shot.png and quit
-	if "--shot" in OS.get_cmdline_user_args():
-		get_tree().create_timer(2.0).timeout.connect(func():
-			get_viewport().get_texture().get_image().save_png("user://shot.png")
-			get_tree().quit())
+	# dev: `-- --shot` saves a viewport screenshot to user://shot.png and quits.
+	# add `--warp=N` to warp to checkpoint N first (capture the background mid-climb).
+	var uargs := OS.get_cmdline_user_args()
+	if "--shot" in uargs:
+		var wi := -1
+		for a in uargs:
+			if a.begins_with("--warp="):
+				wi = int(a.substr(7))
+		get_tree().create_timer(1.2).timeout.connect(func():
+			if wi >= 0 and wi < warp_points.size():
+				_warp_to(wi)
+			get_tree().create_timer(1.8).timeout.connect(func():
+				get_viewport().get_texture().get_image().save_png("user://shot.png")
+				get_tree().quit()))
 
 # --- tiled ledges (Ansimuz Modular tileset) ---
 # Leafy-green top tiles over a stone body with vines built in — the set's own
@@ -106,6 +118,7 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	sb.position = pos
 	sb.collision_layer = 1
 	sb.z_index = -1            # behind Game._draw so the tongue/flies render in front
+	sb.modulate = Biome.tint((level_spawn.y - pos.y) / 100.0)   # biome colour by height
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
