@@ -97,6 +97,14 @@ const T := 16            # source tile size
 const TS := 2.6          # draw scale — matches the frog's pixel size for cohesion
 const TW := T * TS       # tile world size (41.6)
 
+# per-biome ground material (top tiles over body tiles; a random one is picked per cell)
+const GROUND := [
+	{ "top": [Vector2i(5, 7), Vector2i(6, 7)], "body": [Vector2i(5, 8), Vector2i(6, 8)] },     # Woods  — leafy
+	{ "top": [Vector2i(1, 13)],                "body": [Vector2i(1, 14)] },                    # Ruins  — dark brick
+	{ "top": [Vector2i(8, 7), Vector2i(9, 7)], "body": [Vector2i(8, 8), Vector2i(9, 8)] },     # Cliffs — grey rock
+	{ "top": [Vector2i(14, 7), Vector2i(15, 7)], "body": [Vector2i(14, 12), Vector2i(15, 12)] }, # Peak — terracotta
+]
+
 func _tile(parent: Node2D, x: float, y: float, col: int, row: int, sx: float, flip := false) -> void:
 	var s := Sprite2D.new()
 	var at := AtlasTexture.new()
@@ -119,7 +127,7 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	sb.z_index = -1            # behind Game._draw so the tongue/flies render in front
 	var hm := (level_spawn.y - pos.y) / 100.0
 	sb.modulate = Biome.tint(hm)                       # biome colour by height
-	var ca: int = 5 if Biome.index(hm) == 0 else 8     # foreground tiles: Woods leafy / else rock
+	var g: Dictionary = GROUND[Biome.index(hm)]        # per-biome ground material
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
@@ -138,12 +146,13 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	for cxi in cols:
 		var x := startx + cxi * tile_w
 		for r in rows:
-			var c: int = ca if rng.randf() < 0.5 else ca + 1   # two variants per biome
 			var fl := rng.randf() < 0.5                        # random flip breaks the grid
 			if r == 0 and mossy:
-				_tile(sb, x, topy, c, 7, sx, fl)               # grassy/rocky top
+				var tt: Vector2i = g["top"][rng.randi() % g["top"].size()]
+				_tile(sb, x, topy, tt.x, tt.y, sx, fl)         # biome top
 			else:
-				_tile(sb, x, topy + r * TW, c, 8, sx, fl)      # body
+				var bt: Vector2i = g["body"][rng.randi() % g["body"].size()]
+				_tile(sb, x, topy + r * TW, bt.x, bt.y, sx, fl)  # biome body
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:
