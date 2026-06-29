@@ -72,6 +72,11 @@ func _ready() -> void:
 	win_screen = WinScreenScene.new()
 	add_child(win_screen)
 	start_best = Save.best_height
+	# dev: launch with `-- --shot` to save a viewport screenshot to user://shot.png and quit
+	if "--shot" in OS.get_cmdline_user_args():
+		get_tree().create_timer(2.0).timeout.connect(func():
+			get_viewport().get_texture().get_image().save_png("user://shot.png")
+			get_tree().quit())
 
 # --- tiled ledges (Ansimuz Modular tileset) ---
 # Leafy-green top tiles over a stone body with vines built in — the set's own
