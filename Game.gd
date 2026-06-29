@@ -104,6 +104,13 @@ const GROUND := [
 	{ "top": [Vector2i(8, 7), Vector2i(9, 7)], "body": [Vector2i(8, 8), Vector2i(9, 8)] },     # Cliffs — grey rock
 	{ "top": [Vector2i(14, 7), Vector2i(15, 7)], "body": [Vector2i(14, 12), Vector2i(15, 12)] }, # Peak — terracotta
 ]
+# sparse biome props placed on top of ledges (tasteful detail, not every cell)
+const PROPS := [
+	[Vector2i(1, 2), Vector2i(3, 2)],   # Woods  — grass tufts
+	[Vector2i(3, 6)],                   # Ruins  — fallen rubble
+	[Vector2i(3, 6)],                   # Cliffs — loose rock
+	[Vector2i(3, 6)],                   # Peak   — loose rock
+]
 
 func _tile(parent: Node2D, x: float, y: float, col: int, row: int, sx: float, flip := false) -> void:
 	var s := Sprite2D.new()
@@ -153,6 +160,13 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 			else:
 				var bt: Vector2i = g["body"][rng.randi() % g["body"].size()]
 				_tile(sb, x, topy + r * TW, bt.x, bt.y, sx, fl)  # biome body
+	# sparse prop on top — at most one per few cells, sitting on the surface
+	if mossy:
+		var props: Array = PROPS[Biome.index(hm)]
+		for cxi in cols:
+			if rng.randf() < 0.16:
+				var p: Vector2i = props[rng.randi() % props.size()]
+				_tile(sb, startx + cxi * tile_w, -hy - TW * 0.35, p.x, p.y, sx, rng.randf() < 0.5)
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:
