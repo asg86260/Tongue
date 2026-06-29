@@ -8,9 +8,9 @@ extends RefCounted
 # Tints are tuned to harmonise the platforms with each biome's backdrop scene.
 const BANDS := [
 	{ "h": 0.0,  "tint": Color(1.00, 1.04, 0.96) },   # Woods  — lush green forest
-	{ "h": 13.0, "tint": Color(0.90, 0.90, 1.06) },   # Ruins  — cool blue-purple peaks
-	{ "h": 27.0, "tint": Color(1.12, 0.86, 0.70) },   # Cliffs — warm red dusk
-	{ "h": 40.0, "tint": Color(1.12, 0.94, 0.76) },   # Peak   — warm canyon gold
+	{ "h": 13.0, "tint": Color(0.82, 0.90, 1.10) },   # Ruins  — cold grey stone
+	{ "h": 27.0, "tint": Color(0.98, 0.78, 0.60) },   # Cliffs — deep red dusk brick (muted)
+	{ "h": 40.0, "tint": Color(1.08, 0.90, 0.64) },   # Peak   — gold canyon sandstone
 ]
 
 static func index(hm: float) -> int:
