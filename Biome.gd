@@ -10,7 +10,7 @@ const BANDS := [
 	{ "h": 0.0,  "tint": Color(1.00, 1.04, 0.96) },   # Woods  — lush green forest
 	{ "h": 13.0, "tint": Color(0.82, 0.90, 1.10) },   # Ruins  — cold grey stone
 	{ "h": 27.0, "tint": Color(0.98, 0.78, 0.60) },   # Cliffs — deep red dusk brick (muted)
-	{ "h": 40.0, "tint": Color(1.08, 0.90, 0.64) },   # Peak   — gold canyon sandstone
+	{ "h": 40.0, "tint": Color(1.26, 1.04, 0.60) },   # Peak   — sun-baked gold sandstone rock
 ]
 
 static func index(hm: float) -> int:

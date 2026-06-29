@@ -101,8 +101,8 @@ const TW := T * TS       # tile world size (41.6)
 const GROUND := [
 	{ "top": [Vector2i(5, 7), Vector2i(6, 7)],   "body": [Vector2i(5, 8), Vector2i(6, 8)] },   # Woods  — leafy
 	{ "top": [Vector2i(8, 7), Vector2i(9, 7)],   "body": [Vector2i(8, 8), Vector2i(9, 8)] },   # Ruins  — grey rock (cool)
-	{ "top": [Vector2i(14, 5), Vector2i(15, 5)], "body": [Vector2i(14, 7), Vector2i(15, 7)] }, # Cliffs — terracotta brick
-	{ "top": [Vector2i(14, 7), Vector2i(15, 7)], "body": [Vector2i(14, 12), Vector2i(15, 12)] }, # Peak — terracotta floor
+	{ "top": [Vector2i(13, 5), Vector2i(14, 5)], "body": [Vector2i(13, 7), Vector2i(14, 7)] }, # Cliffs — terracotta brick (plain wall)
+	{ "top": [Vector2i(8, 7), Vector2i(9, 7)],   "body": [Vector2i(8, 8), Vector2i(9, 8)] },   # Peak — grey rock (gold-tinted = sandstone)
 ]
 # sparse biome props placed on top of ledges (tasteful detail, not every cell)
 const PROPS := [
