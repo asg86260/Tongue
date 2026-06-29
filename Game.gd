@@ -58,12 +58,7 @@ var warp_points: Array[Vector2] = []   # dev tool: number keys teleport to each 
 func _ready() -> void:
 	_build_level()
 	_build_player()
-	var bg_layer := CanvasLayer.new()
-	bg_layer.layer = -10
-	add_child(bg_layer)
-	var backdrop := BackdropScene.new()
-	backdrop.target = player
-	bg_layer.add_child(backdrop)
+	add_child(BackdropScene.new())   # ParallaxBackground; follows the camera, sits at layer -10
 	var fg_layer := CanvasLayer.new()
 	fg_layer.layer = 1               # in front of the world, below the HUD (layer 2)
 	add_child(fg_layer)
