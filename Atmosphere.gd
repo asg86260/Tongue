@@ -21,6 +21,7 @@ var t := 0.0
 var motes: Array = []
 var _col := MOTE_COLS[0]
 var _wind := MOTE_WIND[0]
+var _idx := 0
 const N := 54
 
 func _ready() -> void:
@@ -43,9 +44,9 @@ func _ready() -> void:
 func _process(d: float) -> void:
 	t += d
 	if target:
-		var idx := Biome.index((SPAWN_Y - target.global_position.y) / 100.0)
-		_col = _col.lerp(MOTE_COLS[idx], clampf(d * 1.5, 0.0, 1.0))
-		_wind = lerpf(_wind, MOTE_WIND[idx], clampf(d * 1.5, 0.0, 1.0))
+		_idx = Biome.index((SPAWN_Y - target.global_position.y) / 100.0)
+		_col = _col.lerp(MOTE_COLS[_idx], clampf(d * 1.5, 0.0, 1.0))
+		_wind = lerpf(_wind, MOTE_WIND[_idx], clampf(d * 1.5, 0.0, 1.0))
 	queue_redraw()
 
 func _draw() -> void:
@@ -56,6 +57,17 @@ func _draw() -> void:
 		var x: float = fmodp(m.fx * vp.x + sin(t * m.swf + m.phase) * m.amp + t * _wind + cam.x * 0.18, vp.x + 60.0) - 30.0
 		var a: float = m.a * (0.55 + 0.45 * sin(t * 1.7 + m.phase))
 		draw_rect(Rect2(x, y, m.r, m.r), Color(_col.r, _col.g, _col.b, a))
+	# CLIFFS wind streaks: fast warm dashes blowing with the gust (telegraphs the wind force)
+	if _idx == 2:
+		var gust := absf(sin(t * 0.5))
+		var dir := signf(sin(t * 0.5))
+		if dir == 0.0:
+			dir = 1.0
+		for i in 12:
+			var sy := fmodp(i * 71.0 + t * 26.0, vp.y + 20.0)
+			var sx := fmodp(i * 137.0 + t * (360.0 * dir + 90.0), vp.x + 80.0) - 40.0
+			var a := 0.08 + 0.20 * gust
+			draw_line(Vector2(sx, sy), Vector2(sx + dir * (30.0 + 50.0 * gust), sy), Color(0.98, 0.72, 0.42, a), 2.0)
 	_vignette(vp)
 
 # darken the top and bottom edges for focus/mood

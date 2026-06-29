@@ -32,7 +32,7 @@ const FROG_DIR := "res://assets/FROGLET_16x16_Sprite/green/PNG/"
 const Biome := preload("res://Biome.gd")
 const SPAWN_Y := -40.0
 const CRUMBLE_TIME := 1.15   # Ruins: a grip crumbles (lets go) this long after you stick
-const WIND_FORCE := 165.0    # Cliffs: alternating horizontal gust strength on the airborne frog
+const WIND_FORCE := 300.0    # Cliffs: alternating horizontal gust strength on the airborne frog
 
 var controller            # the Game node (juice/catch callbacks + phase flags)
 var active := true        # false while god-cam or after winning (stops control logic)
@@ -287,7 +287,7 @@ func _physics_process(delta: float) -> void:
 	# CLIFFS gimmick — wind: slow alternating gusts shove the airborne frog, so you must
 	# lean into them to hold a line through a swing. (Telegraphed by the blowing embers.)
 	if biome == 2 and not grounded:
-		apply_central_force(Vector2(sin(gtime * 0.6) * WIND_FORCE, 0.0))
+		apply_central_force(Vector2(sin(gtime * 0.5) * WIND_FORCE, 0.0))
 
 	# frog-leap whenever standing on something — allowed even with the tongue attached
 	# (jump off the ground into a swing); the tongue stays stuck.

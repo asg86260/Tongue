@@ -20,6 +20,15 @@ var player: PlayerScene
 var win_screen: CanvasLayer
 var cam: Camera2D
 var label: Label
+var gimmick_banner: Label   # announces each biome's swing gimmick on entry
+var _last_biome := -1
+var _banner_t := 0.0
+const BIOME_BANNER := [
+	"WOODS",
+	"RUINS  —  grips crumble, keep moving!",
+	"CLIFFS  —  mind the wind!",
+	"PEAK  —  anchors flicker out!",
+]
 var start_y := 0.0
 var best := 0.0
 # ---- height milestones ----
@@ -329,6 +338,14 @@ func _build_ui() -> void:
 	label.position = Vector2(16, 12)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	layer.add_child(label)
+	gimmick_banner = Label.new()
+	gimmick_banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	gimmick_banner.position = Vector2(-180, 70)
+	gimmick_banner.add_theme_color_override("font_color", Color(1, 0.95, 0.7))
+	gimmick_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	gimmick_banner.add_theme_constant_override("outline_size", 6)
+	gimmick_banner.add_theme_font_size_override("font_size", 26)
+	layer.add_child(gimmick_banner)
 
 # ---- procedural SFX (no asset files) ----
 func _wav(samples: PackedFloat32Array) -> AudioStreamWAV:
@@ -625,6 +642,17 @@ func _draw() -> void:
 		_draw_tongue(player.mouth, player.anchor, tc, w)
 		_pixel_dot(player.anchor, 2, tc)
 		_pixel_dot(player.anchor, 1, Color(1, 1, 1, 0.9))   # sticky tip highlight
+		# RUINS crumble: the grip visibly cracks, shudders and sheds debris before it gives
+		if Biome.index((level_spawn.y - player.anchor.y) / 100.0) == 1 and player.attach_t > 0.12:
+			var prog: float = clamp(player.attach_t / player.CRUMBLE_TIME, 0.0, 1.0)
+			var jit := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * prog * 3.0
+			var n := 3 + int(prog * 4.0)
+			for i in n:
+				var ang := TAU * float(i) / float(n) + prog * 2.0
+				_draw_tongue(player.anchor + jit, player.anchor + jit + Vector2(cos(ang), sin(ang)) * (6.0 + prog * 16.0),
+					Color(0.55, 0.42, 0.32, 0.45 + 0.45 * prog), 2.0)
+			if prog > 0.5:
+				_pixel_dot(player.anchor + Vector2(randf_range(-7.0, 7.0), prog * 12.0), 2, Color(0.5, 0.4, 0.3, 0.8))
 	elif player.tstate == 1 or player.tstate == 3:
 		var tip: Vector2
 		if player.thit and player.tstate == 1:
@@ -698,6 +726,16 @@ func _process(d: float) -> void:
 			cam.offset = Vector2.ZERO
 	best_flash = max(best_flash - d, 0.0)
 	queue_redraw()
+
+	# biome gimmick banner: announce the active swing gimmick on entry, then fade out
+	if player and gimmick_banner:
+		var bi := Biome.index((level_spawn.y - player.global_position.y) / 100.0)
+		if bi != _last_biome:
+			_last_biome = bi
+			gimmick_banner.text = BIOME_BANNER[bi]
+			_banner_t = 4.0
+		_banner_t = max(_banner_t - d, 0.0)
+		gimmick_banner.modulate.a = clampf(_banner_t, 0.0, 1.0)
 
 	if not label:
 		return
