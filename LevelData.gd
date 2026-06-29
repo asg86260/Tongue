@@ -35,27 +35,26 @@ static func tower() -> Dictionary:
 			[  40, -5020, 150, 36],   # 5: ~50m — summit landing under the fly
 		],
 		"platforms": [
-			# --- 0–20m: a JUMP-ONLY staircase. Rises ~110px (under the ~142px jump apex),
-			#     tiny ±60 offsets, wide overlapping ledges — clearable by jumping alone.
-			#     Swinging is optional here; you never need the tongue until ~20m. ---
-			[  60, -60, 250, 36],
-			[ -60, -170, 250, 36],
-			[  60, -280, 250, 36],
-			[ -60, -390, 250, 34],
-			[  60, -500, 250, 34],
-			[ -60, -610, 240, 34],
-			[  60, -720, 240, 34],
-			[ -60, -830, 240, 32],
-			[  60, -940, 240, 32],
+			# --- 0–20m: JUMP-ONLY, but ORGANIC. Every rise stays ≤130px (under the ~142px
+			#     jump apex) and offsets ≤160px, yet the rhythm varies — same-side step-ups,
+			#     swings back across, the odd left run, varied widths. Tongue optional. ---
+			[  85,  -65, 260, 36],
+			[ -55, -180, 240, 36],
+			[ 120, -295, 200, 34],
+			[ 135, -410, 175, 34],   # small step-up on the same side
+			[ -45, -525, 250, 36],   # swing back across to a wide rest
+			[-185, -640, 180, 32],   # reach out left
+			[ -50, -755, 215, 32],
+			[ 110, -870, 185, 30],
+			[  20, -985, 200, 30],
 			# (perch 1 at -1050)
-			[ -60, -1160, 240, 32],
-			[  60, -1270, 230, 32],
-			[ -60, -1380, 230, 32],
-			[  60, -1490, 230, 30],
-			[ -60, -1600, 220, 30],
-			[  60, -1710, 220, 30],
-			[ -60, -1820, 220, 30],
-			[  60, -1930, 220, 30],
+			[ -95, -1170, 200, 32],
+			[-185, -1290, 175, 30],  # short left run
+			[ -30, -1410, 220, 32],
+			[ 130, -1530, 180, 30],
+			[  40, -1650, 205, 30],
+			[-110, -1770, 190, 30],
+			[  50, -1890, 210, 30],
 			# (perch 2 at -2000)
 			# --- 20–30m: bigger gaps (grapple) + first knob swings ---
 			[-160, -2190, 170, 30],
