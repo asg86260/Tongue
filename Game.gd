@@ -110,15 +110,17 @@ func _tile(parent: Node2D, x: float, y: float, col: int, row: int, sx: float, fl
 	s.flip_h = flip
 	parent.add_child(s)
 
-# A ledge: one leafy-green top row over stone-body rows (mossy=false skips the
-# grass for overhangs). The body hangs a row below the collision for visual mass.
-# Tile variant + flip are randomized per cell so the vines don't form a grid.
+# A ledge: a top row (leafy in Woods, rock in the mountain biomes) over body rows,
+# tiled to the exact collision size (no extra hanging row). mossy=false skips the
+# grass top for overhangs. Tile variant + flip are randomized so vines don't grid.
 func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
 	sb.collision_layer = 1
 	sb.z_index = -1            # behind Game._draw so the tongue/flies render in front
-	sb.modulate = Biome.tint((level_spawn.y - pos.y) / 100.0)   # biome colour by height
+	var hm := (level_spawn.y - pos.y) / 100.0
+	sb.modulate = Biome.tint(hm)                       # biome colour by height
+	var ca: int = 5 if Biome.index(hm) == 0 else 8     # foreground tiles: Woods leafy / else rock
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
@@ -127,22 +129,22 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var hy := size.y * 0.5
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
-	# fit a whole number of tiles to the EXACT collision width (no overhang)
+	# fit whole tiles to the EXACT collision size (width and height) — no overhang
 	var cols: int = max(1, int(round(size.x / TW)))
 	var tile_w := size.x / cols
 	var sx := tile_w / T
-	var rows: int = max(2, int(ceil(size.y / TW)) + 1)
+	var rows: int = max(1, int(ceil(size.y / TW)))
 	var startx := -size.x * 0.5 + tile_w * 0.5
 	var topy := -hy + TW * 0.5
 	for cxi in cols:
 		var x := startx + cxi * tile_w
 		for r in rows:
-			var c: int = 5 if rng.randf() < 0.5 else 6   # random variant per cell
-			var fl := rng.randf() < 0.5                  # random flip breaks the grid
+			var c: int = ca if rng.randf() < 0.5 else ca + 1   # two variants per biome
+			var fl := rng.randf() < 0.5                        # random flip breaks the grid
 			if r == 0 and mossy:
-				_tile(sb, x, topy, c, 7, sx, fl)         # leafy green top
+				_tile(sb, x, topy, c, 7, sx, fl)               # grassy/rocky top
 			else:
-				_tile(sb, x, topy + r * TW, c, 8, sx, fl)  # stone body (vines built in)
+				_tile(sb, x, topy + r * TW, c, 8, sx, fl)      # body
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:

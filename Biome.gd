@@ -13,6 +13,13 @@ const BANDS := [
 	{ "h": 40.0, "tint": Color(1.12, 0.94, 0.76) },   # Peak   — warm canyon gold
 ]
 
+static func index(hm: float) -> int:
+	var n := 0
+	for i in range(BANDS.size()):
+		if hm >= BANDS[i]["h"]:
+			n = i
+	return n
+
 static func tint(hm: float) -> Color:
 	if hm <= BANDS[0]["h"]:
 		return BANDS[0]["tint"]

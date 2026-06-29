@@ -171,7 +171,6 @@ func _physics_process(delta: float) -> void:
 	grounded = is_grounded()
 	if grounded and not has_tongue:
 		has_tongue = true
-		controller.add_pop(global_position, 0.25, Color(0.45, 1.0, 0.55))   # recharge flash
 
 	# fire on click edge / release to let go
 	var pressed := Input.is_action_pressed("fire")
@@ -210,7 +209,6 @@ func _physics_process(delta: float) -> void:
 					if not grounded:
 						has_tongue = false   # a SUCCESSFUL airborne grab is your one per jump
 					controller.add_shake(7.0)
-					controller.add_pop(anchor, 0.22, Color(0.95, 0.45, 0.55))
 					controller.play_sfx("stick")
 			elif tlen >= MAX_LEN:  # whiffed -> snap back
 				tstate = 3
