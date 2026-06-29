@@ -10,7 +10,6 @@ const PauseMenuScene := preload("res://PauseMenu.gd")
 const WinScreenScene := preload("res://WinScreen.gd")
 const BackdropScene := preload("res://Backdrop.gd")
 const AtmosphereScene := preload("res://Atmosphere.gd")
-const BackwallScene := preload("res://Backwall.gd")
 const Biome := preload("res://Biome.gd")
 
 const PIX := 2.6              # pixel-cell size for the chunky pixel-art draw helpers
@@ -58,7 +57,6 @@ var warp_points: Array[Vector2] = []   # dev tool: number keys teleport to each 
 
 func _ready() -> void:
 	_build_level()
-	add_child(BackwallScene.new())   # structural rock columns behind the ledges
 	_build_player()
 	var backdrop := BackdropScene.new()   # ParallaxBackground; follows the camera, layer -10
 	backdrop.target = player
