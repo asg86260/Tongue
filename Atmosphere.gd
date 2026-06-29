@@ -1,12 +1,26 @@
 extends Control
 
-# Foreground atmosphere: drifting spores/dust in front of the world plus a soft
-# vignette. A Control that Game parents under a CanvasLayer above the world but below
-# the HUD. Reads `target` (the player) for a touch of parallax.
+# Foreground atmosphere: drifting motes + a soft vignette, in front of the world but
+# below the HUD. Biome-aware: the motes recolour and pick up wind as you climb —
+# green spores (Woods) → cold mist (Ruins) → warm embers (Cliffs) → blowing sand (Peak).
+
+const Biome := preload("res://Biome.gd")
+const SPAWN_Y := -40.0
+
+# per-biome mote colour + horizontal wind (px/s); smoothly lerped at transitions
+const MOTE_COLS := [
+	Color(0.70, 0.90, 0.55),   # Woods  — green spores
+	Color(0.72, 0.83, 0.98),   # Ruins  — cold pale mist
+	Color(0.98, 0.62, 0.30),   # Cliffs — warm embers
+	Color(0.93, 0.85, 0.62),   # Peak   — blowing sand
+]
+const MOTE_WIND := [5.0, 9.0, 16.0, 46.0]
 
 var target: Node2D
 var t := 0.0
 var motes: Array = []
+var _col := MOTE_COLS[0]
+var _wind := MOTE_WIND[0]
 const N := 54
 
 func _ready() -> void:
@@ -23,12 +37,15 @@ func _ready() -> void:
 			"amp": rng.randf_range(8.0, 26.0),       # sway amplitude
 			"phase": rng.randf() * TAU,
 			"a": rng.randf_range(0.05, 0.18),
-			"warm": rng.randf() < 0.35,              # some are amber (ember-like)
 		})
 	set_process(true)
 
 func _process(d: float) -> void:
 	t += d
+	if target:
+		var idx := Biome.index((SPAWN_Y - target.global_position.y) / 100.0)
+		_col = _col.lerp(MOTE_COLS[idx], clampf(d * 1.5, 0.0, 1.0))
+		_wind = lerpf(_wind, MOTE_WIND[idx], clampf(d * 1.5, 0.0, 1.0))
 	queue_redraw()
 
 func _draw() -> void:
@@ -36,10 +53,9 @@ func _draw() -> void:
 	var cam := target.global_position if target else Vector2.ZERO
 	for m in motes:
 		var y: float = fmodp(m.fy * vp.y - t * m.spd + cam.y * 0.18, vp.y + 60.0) - 30.0
-		var x: float = fmodp(m.fx * vp.x + sin(t * m.swf + m.phase) * m.amp + cam.x * 0.18, vp.x + 60.0) - 30.0
+		var x: float = fmodp(m.fx * vp.x + sin(t * m.swf + m.phase) * m.amp + t * _wind + cam.x * 0.18, vp.x + 60.0) - 30.0
 		var a: float = m.a * (0.55 + 0.45 * sin(t * 1.7 + m.phase))
-		var col := Color(0.95, 0.72, 0.38, a) if m.warm else Color(0.72, 0.9, 0.62, a)
-		draw_rect(Rect2(x, y, m.r, m.r), col)
+		draw_rect(Rect2(x, y, m.r, m.r), Color(_col.r, _col.g, _col.b, a))
 	_vignette(vp)
 
 # darken the top and bottom edges for focus/mood
