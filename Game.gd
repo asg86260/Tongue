@@ -597,4 +597,4 @@ func _process(d: float) -> void:
 			return
 		var clock := "ready — leave the ground to start" if not run_started else "%.2fs" % run_time
 		var banner := "★ NEW BEST ★\n" if best_flash > 0.0 else ""
-		label.text = "%sTONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam  |  1-5 warp\nHeight: %d   Best: %d   Tongue the fly at the top!" % [banner, Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
+		label.text = "%sTONGUE   (%d fps)   %s   flies %d/%d\nLEFT-CLICK tongue & swing  |  A/D walk/run  |  SPACE leap  |  R reset  |  F god cam  |  1-4 warp\nHeight: %d   Best: %d   Tongue the fly at the top!" % [banner, Engine.get_frames_per_second(), clock, fly_count, fly_total, _height(), int(best)]
