@@ -18,6 +18,6 @@ static func tint(hm: float) -> Color:
 		return BANDS[0]["tint"]
 	for i in range(BANDS.size() - 1):
 		if hm < BANDS[i + 1]["h"]:
-			var t := (hm - BANDS[i]["h"]) / (BANDS[i + 1]["h"] - BANDS[i]["h"])
+			var t: float = (hm - BANDS[i]["h"]) / (BANDS[i + 1]["h"] - BANDS[i]["h"])
 			return (BANDS[i]["tint"] as Color).lerp(BANDS[i + 1]["tint"], t)
 	return BANDS[BANDS.size() - 1]["tint"]
