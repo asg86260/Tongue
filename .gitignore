@@ -24,3 +24,6 @@ Thumbs.db
 # Downloaded asset packs (kept local, not committed)
 assets/Legacy Collection/
 assets/__MACOSX/
+
+# Godot editor temp files
+*.tmp
