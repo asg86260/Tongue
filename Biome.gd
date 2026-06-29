@@ -5,11 +5,12 @@ extends RefCounted
 #   Woods (lush green) → Ruins (cool stone) → Cliffs (warm dusk) → Peak (pale cold).
 # Tints lerp across band boundaries for a smooth transition.
 
+# Tints are tuned to harmonise the platforms with each biome's backdrop scene.
 const BANDS := [
-	{ "h": 0.0,  "tint": Color(1.00, 1.04, 0.96) },   # Woods  — lush green
-	{ "h": 13.0, "tint": Color(0.84, 0.91, 0.95) },   # Ruins  — cool desaturated stone
-	{ "h": 27.0, "tint": Color(1.08, 0.93, 0.74) },   # Cliffs — warm golden dusk
-	{ "h": 40.0, "tint": Color(0.82, 0.95, 1.14) },   # Peak   — pale cold blue
+	{ "h": 0.0,  "tint": Color(1.00, 1.04, 0.96) },   # Woods  — lush green forest
+	{ "h": 13.0, "tint": Color(0.90, 0.90, 1.06) },   # Ruins  — cool blue-purple peaks
+	{ "h": 27.0, "tint": Color(1.12, 0.86, 0.70) },   # Cliffs — warm red dusk
+	{ "h": 40.0, "tint": Color(1.12, 0.94, 0.76) },   # Peak   — warm canyon gold
 ]
 
 static func tint(hm: float) -> Color:
