@@ -193,10 +193,18 @@ func _build_level() -> void:
 	# overhead slabs you grapple the underside of (no grass on top)
 	for c in lv.get("ceilings", []):
 		_make_static(Vector2(c[0], c[1]), Vector2(c[2], c[3]), false)
-	# landings: narrow skill-check ledges (no safe-rest affordance — drawn like platforms)
+	# biome checkpoint floors: WIDE ones get a hole in the middle so you can climb up
+	# THROUGH them onto either half (instead of having to mount a solid wide ledge).
 	for p in lv.get("perches", []):
-		_make_static(Vector2(p[0], p[1]), Vector2(p[2], p[3]))
-		warp_points.append(Vector2(p[0], p[1] - p[3] * 0.5 - 30))   # just above the ledge
+		var cx: float = p[0]; var cy: float = p[1]; var w: float = p[2]; var h: float = p[3]
+		if w > 400.0:
+			var hole := 150.0
+			var half := (w - hole) * 0.5
+			_make_static(Vector2(cx - (w + hole) * 0.25, cy), Vector2(half, h))
+			_make_static(Vector2(cx + (w + hole) * 0.25, cy), Vector2(half, h))
+		else:
+			_make_static(Vector2(cx, cy), Vector2(w, h))
+		warp_points.append(Vector2(cx, cy - h * 0.5 - 30))   # warp above the floor centre
 	# grapple-only knobs
 	for a in lv.get("anchors", []):
 		_make_anchor(Vector2(a[0], a[1]), a[2])
