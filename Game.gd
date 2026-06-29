@@ -89,22 +89,20 @@ func _ready() -> void:
 				get_viewport().get_texture().get_image().save_png("user://shot.png")
 				get_tree().quit()))
 
-# --- tiled ledges (Ansimuz Modular tileset) ---
-# Leafy-green top tiles over a stone body with vines built in — the set's own
-# platform material, so the tiles carry the detail (no hand-scattered decoration).
+# --- terrain rendering: seamless rock body fill + lit top edge (per biome) ---
+# Solid masses are filled with the biome's SEAMLESS rock texture (tiles in any
+# direction → connected terrain, no seams), with a lit top face + shadowed base for
+# form. Woods gets leafy tufts; rock biomes get rubble. (modular sheet = props only.)
 const TILES := preload("res://assets/tiles/modular-tileset.png")
-const T := 16            # source tile size
-const TS := 2.6          # draw scale — matches the frog's pixel size for cohesion
-const TW := T * TS       # tile world size (41.6)
-
-# per-biome ground material (top tiles over body tiles; a random one is picked per cell)
-const GROUND := [
-	{ "top": [Vector2i(5, 7), Vector2i(6, 7)],   "body": [Vector2i(5, 8), Vector2i(6, 8)] },   # Woods  — leafy
-	{ "top": [Vector2i(8, 7), Vector2i(9, 7)],   "body": [Vector2i(8, 8), Vector2i(9, 8)] },   # Ruins  — grey rock (cool)
-	{ "top": [Vector2i(13, 5), Vector2i(14, 5)], "body": [Vector2i(13, 7), Vector2i(14, 7)] }, # Cliffs — terracotta brick (plain wall)
-	{ "top": [Vector2i(8, 7), Vector2i(9, 7)],   "body": [Vector2i(8, 8), Vector2i(9, 8)] },   # Peak — grey rock (gold-tinted = sandstone)
+const T := 16
+const TS := 2.6
+const TW := T * TS
+const ROCK := [
+	preload("res://assets/rocks/rock4.png"),   # Woods  — green moss
+	preload("res://assets/rocks/rock8.png"),   # Ruins  — grey slate
+	preload("res://assets/rocks/rock1.png"),   # Cliffs — red-brown
+	preload("res://assets/rocks/rock7.png"),   # Peak   — gold sandstone
 ]
-# sparse biome props placed on top of ledges (tasteful detail, not every cell)
 const PROPS := [
 	[Vector2i(1, 2), Vector2i(3, 2)],   # Woods  — grass tufts
 	[Vector2i(3, 6)],                   # Ruins  — fallen rubble
@@ -124,49 +122,56 @@ func _tile(parent: Node2D, x: float, y: float, col: int, row: int, sx: float, fl
 	s.flip_h = flip
 	parent.add_child(s)
 
-# A ledge: a top row (leafy in Woods, rock in the mountain biomes) over body rows,
-# tiled to the exact collision size (no extra hanging row). mossy=false skips the
-# grass top for overhangs. Tile variant + flip are randomized so vines don't grid.
+func _rect_poly(parent: Node2D, cx: float, cy: float, w: float, h: float, col: Color) -> void:
+	var p := Polygon2D.new()
+	p.polygon = PackedVector2Array([
+		Vector2(cx - w * 0.5, cy - h * 0.5), Vector2(cx + w * 0.5, cy - h * 0.5),
+		Vector2(cx + w * 0.5, cy + h * 0.5), Vector2(cx - w * 0.5, cy + h * 0.5)])
+	p.color = col
+	parent.add_child(p)
+
+# A solid mass: filled with the biome's seamless rock, a lit top face + shadowed base
+# for form, and sparse props/tufts on top. mossy=false skips the surface dressing
+# (for overhangs/ceilings). Works for any rect — thin ledges OR big connected masses.
 func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
 	sb.collision_layer = 1
 	sb.z_index = -1            # behind Game._draw so the tongue/flies render in front
-	var hm := (level_spawn.y - pos.y) / 100.0
-	sb.modulate = Biome.tint(hm)                       # biome colour by height
-	var g: Dictionary = GROUND[Biome.index(hm)]        # per-biome ground material
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
 	cs.shape = shape
 	sb.add_child(cs)
+	var hx := size.x * 0.5
 	var hy := size.y * 0.5
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
-	# fit whole tiles to the EXACT collision size (width and height) — no overhang
-	var cols: int = max(1, int(round(size.x / TW)))
-	var tile_w := size.x / cols
-	var sx := tile_w / T
-	var rows: int = max(1, int(ceil(size.y / TW)))
-	var startx := -size.x * 0.5 + tile_w * 0.5
-	var topy := -hy + TW * 0.5
-	for cxi in cols:
-		var x := startx + cxi * tile_w
-		for r in rows:
-			var fl := rng.randf() < 0.5                        # random flip breaks the grid
-			if r == 0 and mossy:
-				var tt: Vector2i = g["top"][rng.randi() % g["top"].size()]
-				_tile(sb, x, topy, tt.x, tt.y, sx, fl)         # biome top
-			else:
-				var bt: Vector2i = g["body"][rng.randi() % g["body"].size()]
-				_tile(sb, x, topy + r * TW, bt.x, bt.y, sx, fl)  # biome body
-	# sparse prop on top — at most one per few cells, sitting on the surface
+	var bi := Biome.index((level_spawn.y - pos.y) / 100.0)
+	# seamless rock body fill (tiles in any direction)
+	var body := Polygon2D.new()
+	body.polygon = PackedVector2Array([Vector2(-hx, -hy), Vector2(hx, -hy), Vector2(hx, hy), Vector2(-hx, hy)])
+	body.texture = ROCK[bi]
+	body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	body.texture_scale = Vector2(0.4, 0.4)   # ~80px rock tiles (≈ frog pixel size)
+	body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sb.add_child(body)
+	# lit top face + shadowed base give the mass form
+	_rect_poly(sb, 0, -hy + 4.0, size.x, 8.0, Color(1, 1, 1, 0.16))
+	_rect_poly(sb, 0, -hy + 1.0, size.x, 2.0, Color(1, 1, 1, 0.30))
+	_rect_poly(sb, 0, hy - 3.0, size.x, 6.0, Color(0, 0, 0, 0.28))
+	# sparse props/tufts on the top surface
 	if mossy:
-		var props: Array = PROPS[Biome.index(hm)]
+		var rng := RandomNumberGenerator.new()
+		rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
+		var cols: int = max(1, int(round(size.x / TW)))
+		var tw := size.x / cols
+		var sx := tw / T
+		var startx := -hx + tw * 0.5
+		var props: Array = PROPS[bi]
+		var chance := 0.5 if bi == 0 else 0.16   # Woods is denser with tufts
 		for cxi in cols:
-			if rng.randf() < 0.16:
+			if rng.randf() < chance:
 				var p: Vector2i = props[rng.randi() % props.size()]
-				_tile(sb, startx + cxi * tile_w, -hy - TW * 0.35, p.x, p.y, sx, rng.randf() < 0.5)
+				_tile(sb, startx + cxi * tw, -hy - TW * 0.3, p.x, p.y, sx, rng.randf() < 0.5)
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:
