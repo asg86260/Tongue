@@ -15,6 +15,7 @@ const CONTRACT_SPEED := 240.0 # px/sec the tongue reels in after sticking (highe
 const PULL_FACTOR := 0.60    # reels in to this fraction of grab length
 const CAP_STIFFEN := 5.0     # rope gets this much stiffer past its max (grab) length
 const AIR_NUDGE := 380.0     # small left/right air control while swinging
+const AIR_STRAFE_MAX := 190.0 # cap on horizontal speed you can build by strafing in free air
 const BODY_MASS := 1.0
 const TONGUE_SPEED := 2600.0 # px/sec the tongue shoots out & retracts (its travel time)
 const JUMP_IMPULSE := 560.0  # frog-leap takeoff speed (px/s upward)
@@ -253,7 +254,11 @@ func _physics_process(delta: float) -> void:
 		var target := ix * RUN_SPEED
 		linear_velocity.x = move_toward(linear_velocity.x, target, GROUND_ACCEL * delta)
 	elif ix != 0.0:
-		apply_central_force(Vector2(ix * AIR_NUDGE, 0))
+		# Swing steering is uncapped (pump the pendulum). In FREE air, only nudge while
+		# under AIR_STRAFE_MAX so strafing can't keep building horizontal speed — swing
+		# momentum already past the cap is preserved (we never actively brake).
+		if attached or ix * linear_velocity.x < AIR_STRAFE_MAX:
+			apply_central_force(Vector2(ix * AIR_NUDGE, 0))
 
 	# frog-leap whenever standing on something — allowed even with the tongue attached
 	# (jump off the ground into a swing); the tongue stays stuck.

@@ -42,7 +42,6 @@ var win_time := 0.0
 var flap := 0.0
 # ---- juice ----
 var shake := 0.0
-var pops: Array = []          # each: {pos:Vector2, t:float, life:float, col:Color}
 var sfx_stick: AudioStreamPlayer
 var sfx_hop: AudioStreamPlayer
 var sfx_win: AudioStreamPlayer
@@ -283,9 +282,6 @@ func _height() -> int:
 	return int((start_y - player.global_position.y) / 100.0)
 
 # ---- callbacks the Player uses ----
-func add_pop(pos: Vector2, life: float, col: Color) -> void:
-	pops.append({"pos": pos, "t": 0.0, "life": life, "col": col})
-
 func add_shake(amount: float) -> void:
 	shake = max(shake, amount)
 
@@ -306,13 +302,11 @@ func catch_at(tip: Vector2) -> int:
 		if not f["caught"] and tip.distance_to(f["pos"]) < FLY_CATCH_R:
 			f["caught"] = true
 			add_shake(4.0)
-			add_pop(f["pos"], 0.28, Color(0.7, 0.95, 0.5))
 			play_sfx("stick")
 			return 1
 	if tip.distance_to(goal_pos) < GOAL_CATCH_R:
 		win_time = run_time          # freeze the clock at the catch (the skill moment)
 		add_shake(8.0)
-		add_pop(goal_pos, 0.4, Color(0.6, 0.9, 0.4))
 		play_sfx("stick")
 		return 2
 	return 0
@@ -320,12 +314,10 @@ func catch_at(tip: Vector2) -> int:
 # the carried fly reached the mouth — swallow it (belly puff handled on the Player)
 func gulp(is_goal: bool, mouth_pos: Vector2) -> void:
 	add_shake(4.0)
-	add_pop(mouth_pos, 0.3, Color(1.0, 1.0, 0.85))
 	if is_goal:
 		won = true
 		player.active = false
 		add_shake(16.0)
-		add_pop(mouth_pos, 0.6, Color(1.0, 1.0, 0.7))
 		play_sfx("win")
 		var h := _height()
 		var new_best := h > Save.best_height or Save.best_time == 0.0 or win_time < Save.best_time
@@ -370,13 +362,11 @@ func _physics_process(delta: float) -> void:
 func _check_milestones(hm: int) -> void:
 	while hm >= milestone_reached + MILESTONE_M:
 		milestone_reached += MILESTONE_M
-		add_pop(player.global_position, 0.45, Color(0.6, 0.95, 0.6))
 		add_shake(2.5)
 		play_sfx("hop")
 	if not beat_best and start_best > 0 and hm > start_best:
 		beat_best = true
 		best_flash = 2.0
-		add_pop(player.global_position, 0.7, Color(1.0, 0.95, 0.5))
 		add_shake(8.0)
 		play_sfx("win")
 
@@ -459,13 +449,6 @@ func _draw() -> void:
 			if bright > 0.05:
 				_draw_tongue(trail[i - 1], trail[i],
 					Color(0.4, 0.85, 0.5, a * 0.5 * bright), 1.0 + a * 4.0)
-	# pop rings (stick + win bursts)
-	for p in pops:
-		var k: float = p.t / p.life
-		var r: float = 6.0 + k * 70.0
-		var c: Color = p.col
-		c.a = (1.0 - k) * 0.8
-		_pixel_ring(p.pos, r, c)
 	# grapple-only knobs: glowing amber runes (aim here, don't land) — flicker + halo
 	var pulse: float = 13.0 + sin(flap * 4.0) * 2.0
 	for kn in anchor_knobs:
@@ -595,10 +578,6 @@ func _process(d: float) -> void:
 			shake = move_toward(shake, 0.0, d * 60.0)
 		else:
 			cam.offset = Vector2.ZERO
-	# advance pop rings
-	for p in pops:
-		p.t += d
-	pops = pops.filter(func(p): return p.t < p.life)
 	best_flash = max(best_flash - d, 0.0)
 	queue_redraw()
 
