@@ -19,7 +19,8 @@ const AIR_STRAFE_MAX := 190.0 # cap on horizontal speed you can build by strafin
 const BODY_MASS := 1.0
 const TONGUE_SPEED := 2600.0 # px/sec the tongue shoots out & retracts (its travel time)
 const JUMP_IMPULSE := 560.0  # frog-leap takeoff speed (px/s upward)
-const JUMP_DIR := 150.0      # horizontal kick added to a leap when holding A/D
+const JUMP_DIR := 110.0      # horizontal kick added to a leap when holding A/D
+const JUMP_HSPEED_MAX := 220.0 # cap on horizontal takeoff speed (tames a running jump)
 const WALK_SPEED := 95.0     # ground stroll
 const RUN_SPEED := 215.0     # ground sprint (hold A/D)
 const GROUND_ACCEL := 1400.0 # how fast ground speed ramps (px/s^2)
@@ -266,6 +267,8 @@ func _physics_process(delta: float) -> void:
 	if jump and not jump_was and grounded:
 		linear_velocity.y = -JUMP_IMPULSE
 		linear_velocity.x += ix * JUMP_DIR   # directional hop when holding A/D
+		# cap the horizontal takeoff so a running jump doesn't launch too hot
+		linear_velocity.x = clampf(linear_velocity.x, -JUMP_HSPEED_MAX, JUMP_HSPEED_MAX)
 		if attached:
 			# let the rope breathe so the spring doesn't instantly yank you back down
 			rest_len = max(rest_len, global_position.distance_to(anchor))
