@@ -61,6 +61,16 @@ func _ready() -> void:
 	var backdrop := BackdropScene.new()   # ParallaxBackground; follows the camera, layer -10
 	backdrop.target = player
 	add_child(backdrop)
+	# haze: a pale wash over the vista (between parallax and world) so the painterly
+	# backdrop recedes into the distance and the platforms read as the near layer.
+	var haze := CanvasLayer.new()
+	haze.layer = -9
+	var wash := ColorRect.new()
+	wash.color = Color(0.74, 0.77, 0.83, 0.42)
+	wash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	haze.add_child(wash)
+	add_child(haze)
 	var fg_layer := CanvasLayer.new()
 	fg_layer.layer = 1               # in front of the world, below the HUD (layer 2)
 	add_child(fg_layer)
@@ -103,6 +113,22 @@ const ROCK := [
 	preload("res://assets/rocks/rock1.png"),   # Cliffs — red-brown
 	preload("res://assets/rocks/rock7.png"),   # Peak   — gold sandstone
 ]
+# Platform colours per biome: mid body + bright walkable cap, wrapped in a dark
+# outline + drop shadow so platforms POP in front of the faded vista (research rule:
+# main layer = high contrast + outline; background recedes).
+const BODYCOL := [
+	Color(0.32, 0.42, 0.29),   # Woods  — mossy green
+	Color(0.40, 0.43, 0.48),   # Ruins  — cool stone
+	Color(0.44, 0.31, 0.27),   # Cliffs — warm red-brown
+	Color(0.52, 0.45, 0.32),   # Peak   — gold sandstone
+]
+const TOPCAP := [
+	Color(0.50, 0.73, 0.39),   # Woods  — bright grass
+	Color(0.61, 0.66, 0.73),   # Ruins  — pale stone
+	Color(0.76, 0.48, 0.35),   # Cliffs — lit terracotta
+	Color(0.88, 0.77, 0.48),   # Peak   — bright gold
+]
+const OUTLINE := Color(0.09, 0.12, 0.10)
 const PROPS := [
 	[Vector2i(1, 2), Vector2i(3, 2)],   # Woods  — grass tufts
 	[Vector2i(3, 6)],                   # Ruins  — fallen rubble
@@ -130,9 +156,9 @@ func _rect_poly(parent: Node2D, cx: float, cy: float, w: float, h: float, col: C
 	p.color = col
 	parent.add_child(p)
 
-# A solid mass: filled with the biome's seamless rock, a lit top face + shadowed base
-# for form, and sparse props/tufts on top. mossy=false skips the surface dressing
-# (for overhangs/ceilings). Works for any rect — thin ledges OR big connected masses.
+# A platform: solid biome body wrapped in a dark outline with a bright walkable top
+# cap and a soft drop shadow on the vista behind — so it POPS as the main layer.
+# mossy=false drops the bright cap (overhangs/ceilings). Works for any rect.
 func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
@@ -146,36 +172,34 @@ func _make_static(pos: Vector2, size: Vector2, mossy := true) -> void:
 	var hx := size.x * 0.5
 	var hy := size.y * 0.5
 	var bi := Biome.index((level_spawn.y - pos.y) / 100.0)
-	# seamless rock body fill (tiles in any direction)
-	var body := Polygon2D.new()
-	body.polygon = PackedVector2Array([Vector2(-hx, -hy), Vector2(hx, -hy), Vector2(hx, hy), Vector2(-hx, hy)])
-	body.texture = ROCK[bi]
-	body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	body.texture_scale = Vector2(0.4, 0.4)   # ~80px rock tiles (≈ frog pixel size)
-	body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sb.add_child(body)
-	# lit top face + shadowed base give the mass form
-	_rect_poly(sb, 0, -hy + 4.0, size.x, 8.0, Color(1, 1, 1, 0.16))
-	_rect_poly(sb, 0, -hy + 1.0, size.x, 2.0, Color(1, 1, 1, 0.30))
-	_rect_poly(sb, 0, hy - 3.0, size.x, 6.0, Color(0, 0, 0, 0.28))
-	# sparse props/tufts on the top surface
+	# soft drop shadow on the background (added first → sits behind the body)
+	_rect_poly(sb, 11.0, 14.0, size.x, size.y, Color(0, 0, 0, 0.26))
+	# dark outline, then the solid body, then a darker base step for form
+	_rect_poly(sb, 0, 0, size.x + 7.0, size.y + 7.0, OUTLINE)
+	_rect_poly(sb, 0, 0, size.x, size.y, BODYCOL[bi])
+	_rect_poly(sb, 0, hy - 6.0, size.x, 12.0, BODYCOL[bi].darkened(0.30))
+	# bright walkable top cap + highlight (the surface reads instantly)
 	if mossy:
-		var rng := RandomNumberGenerator.new()
-		rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
-		var cols: int = max(1, int(round(size.x / TW)))
-		var tw := size.x / cols
-		var sx := tw / T
-		var startx := -hx + tw * 0.5
-		var props: Array = PROPS[bi]
-		var chance := 0.5 if bi == 0 else 0.16   # Woods is denser with tufts
-		for cxi in cols:
-			if rng.randf() < chance:
-				var p: Vector2i = props[rng.randi() % props.size()]
-				_tile(sb, startx + cxi * tw, -hy - TW * 0.3, p.x, p.y, sx, rng.randf() < 0.5)
+		_rect_poly(sb, 0, -hy + 6.0, size.x, 12.0, TOPCAP[bi])
+		_rect_poly(sb, 0, -hy + 2.0, size.x, 4.0, TOPCAP[bi].lightened(0.22))
+		if bi == 0:   # Woods: grass tufts breaking the top edge
+			var rng := RandomNumberGenerator.new()
+			rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
+			var cols: int = max(1, int(round(size.x / TW)))
+			var tw := size.x / cols
+			var sx := tw / T
+			var startx := -hx + tw * 0.5
+			for cxi in cols:
+				if rng.randf() < 0.45:
+					var p: Vector2i = PROPS[0][rng.randi() % PROPS[0].size()]
+					_tile(sb, startx + cxi * tw, -hy - TW * 0.28, p.x, p.y, sx, rng.randf() < 0.5)
+	else:
+		_rect_poly(sb, 0, -hy + 2.0, size.x, 4.0, Color(1, 1, 1, 0.16))
 	add_child(sb)
 
-# A solid wall/terrain mass behind the ledges (z -3): seamless rock fill + collision,
-# no surface dressing. Used to frame the climb as a real canyon (ledges attach to it).
+# A solid wall/terrain mass behind the ledges (z -3): seamless rock fill + collision.
+# Darkened so the bright ledges read in front (Jump-King contrast), and broken up
+# with random shade patches + cracks so the big surface doesn't read as wallpaper.
 func _make_wall(pos: Vector2, size: Vector2) -> void:
 	var sb := StaticBody2D.new()
 	sb.position = pos
@@ -189,14 +213,44 @@ func _make_wall(pos: Vector2, size: Vector2) -> void:
 	var hx := size.x * 0.5
 	var hy := size.y * 0.5
 	var bi := Biome.index((level_spawn.y - pos.y) / 100.0)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(pos.x * 3.0 + pos.y * 7.0) + 1
+	# JAGGED inner edge so the rock face has a natural silhouette, not a flat wall. The
+	# jag only carves AWAY from the shaft (toward the wall centre) so rock never pokes
+	# past the collision rect into walkable space.
+	var s := 1.0 if pos.x < 0.0 else -1.0   # which side faces the shaft (+x for left wall)
+	var phase := rng.randf() * TAU
+	var pts := PackedVector2Array()
+	pts.append(Vector2(-s * hx, -hy))                 # far-side top
+	var yy := -hy
+	while yy <= hy:
+		var jag := (0.5 + 0.5 * sin(yy * 0.02 + phase)) * 70.0 + rng.randf_range(0.0, 22.0)
+		pts.append(Vector2(s * (hx - jag), yy))       # inner edge, carved back
+		yy += 64.0
+	pts.append(Vector2(s * (hx - 30.0), hy))          # inner-side bottom
+	pts.append(Vector2(-s * hx, hy))                  # far-side bottom
 	var body := Polygon2D.new()
-	body.polygon = PackedVector2Array([Vector2(-hx, -hy), Vector2(hx, -hy), Vector2(hx, hy), Vector2(-hx, hy)])
+	body.polygon = pts
 	body.texture = ROCK[bi]
 	body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	body.texture_scale = Vector2(0.4, 0.4)
+	body.texture_scale = Vector2(0.5, 0.5)
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	body.color = Color(0.78, 0.78, 0.78)   # slightly recessed so ledges read in front
+	body.color = Color(0.55, 0.55, 0.58)   # recessed/darker so ledges pop in front
 	sb.add_child(body)
+	# MACRO shading: a few big soft light/dark regions break the grid at a glance
+	var macro: int = int(clamp(size.y / 380.0, 3.0, 24.0))
+	for i in macro:
+		var mw := rng.randf_range(160.0, 420.0)
+		var mh := rng.randf_range(220.0, 520.0)
+		if rng.randf() < 0.55:
+			_rect_poly(sb, rng.randf_range(-hx * 0.7, hx * 0.7), rng.randf_range(-hy, hy), mw, mh, Color(0, 0, 0, rng.randf_range(0.08, 0.16)))
+		else:
+			_rect_poly(sb, rng.randf_range(-hx * 0.7, hx * 0.7), rng.randf_range(-hy, hy), mw, mh, Color(1, 1, 1, rng.randf_range(0.04, 0.09)))
+	# cracks: a few thin dark fissures
+	var cracks: int = int(clamp(size.y / 300.0, 1.0, 20.0))
+	for i in cracks:
+		_rect_poly(sb, rng.randf_range(-hx + 30.0, hx - 30.0), rng.randf_range(-hy, hy),
+			rng.randf_range(2.0, 4.0), rng.randf_range(70.0, 180.0), Color(0, 0, 0, 0.24))
 	add_child(sb)
 
 func _make_anchor(pos: Vector2, r: float) -> void:

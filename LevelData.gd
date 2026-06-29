@@ -22,14 +22,8 @@ extends RefCounted
 static func tower() -> Dictionary:
 	return {
 		"spawn": Vector2(0, -40),
-		"ground": [0, 80, 400, 60],           # the Woods ravine floor (narrow)
+		"ground": [0, 380, 1100, 660],        # wide SOLID base — no void below the start
 		"goal": Vector2(40, -5120),
-		# solid canyon walls [x,y,w,h] (centre) that the ledges attach to. Woods is a
-		# narrow rock ravine: walls inner edges at x=±200, climb up wall-attached shelves.
-		"walls": [
-			[-1400, -630, 2400, 1480],         # Woods left wall  (inner edge x=-200)
-			[ 1400, -630, 2400, 1480],         # Woods right wall (inner edge x=+200)
-		],
 		"perches": [
 			[ 100, -1340, 700, 44],            # 1: Ruins floor  (~13m checkpoint)
 			[   0, -2740, 700, 44],            # 2: Cliffs floor (~27m checkpoint)
@@ -37,19 +31,18 @@ static func tower() -> Dictionary:
 			[  40, -5020, 220, 36],            # 4: Summit landing (~50m)
 		],
 		"platforms": [
-			# --- WOODS 0–13m: jump-only RAVINE. Shelves attach to the L/R walls (inner
-			#     edges x=±200) and alternate; small jumps across the ~60px central gap. ---
-			[ -115,  -60, 170, 36],  # L wall shelf (spans -200..-30)
-			[  115, -175, 170, 36],  # R wall shelf (30..200)
-			[ -115, -290, 170, 36],  # L
-			[  115, -405, 170, 36],  # R
-			[ -115, -520, 170, 36],  # L
-			[  115, -635, 170, 36],  # R
-			[ -115, -750, 170, 36],  # L
-			[  115, -865, 170, 36],  # R
-			[ -115, -980, 170, 36],  # L
-			[  115, -1095, 170, 36], # R
-			[ -115, -1210, 170, 36], # L — jump up onto the Ruins floor
+			# --- WOODS 0–13m: jump-only, organic (rises ≤130, offsets ≤160) ---
+			[  85,  -65, 260, 36],
+			[ -55, -180, 240, 36],
+			[ 120, -295, 200, 34],
+			[ 135, -410, 175, 34],   # same-side step-up
+			[ -45, -525, 250, 36],   # swing back across, wide
+			[-185, -640, 180, 32],   # reach left
+			[ -50, -755, 215, 32],
+			[ 110, -870, 185, 30],
+			[  20, -985, 200, 30],
+			[ -90, -1110, 200, 32],
+			[  60, -1230, 200, 32],  # last woods ledge — jump up onto the Ruins floor
 			# --- RUINS 13–27m: narrow ledges + knob swings over the floor ---
 			[ 380, -1500, 150, 28],
 			[-120, -1660, 150, 28],
